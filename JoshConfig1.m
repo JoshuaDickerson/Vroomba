@@ -43,6 +43,8 @@ function finalRad= ExampleControlProgram(serPort)
     while toc(tStart) < maxDuration && distSansBump <= maxDistSansBump
         distSansBump= distSansBump+DistanceSensorRoomba(serPort);
         angTurned= angTurned+AngleSensorRoomba(serPort);
+
+% Below if-loop is for moving the bot for a specific amount of time         
 %         if toc(tStart) >= 8
 %             w = 0.4;
 %             SetFwdVelAngVelCreate(serPort,v,w)
@@ -53,11 +55,15 @@ function finalRad= ExampleControlProgram(serPort)
 %         end
 %
     
-            frontDist = ReadSonar(serPort, 2);
-            if frontDist <= 0.2
-                SetFwdVelAngVelCreate(serPort,0,0)
+%  Below is the very beginning of an avoidance system
+%  only works when the bot is running into a wall, and is at an angle
+%  to the wall, such that the right beam can see the wall 
+            sonarFront = ReadSonar(serPort, 2);
+            if sonarFront <= 0.2
+               SetFwdVelAngVelCreate(serPort,0,0)
+               sonarRight = ReadSonar(serPort, 1);
+               turnParallelWall(serPort, sonarFront, sonarRight)
             end
-    
         % Briefly pause to avoid continuous loop iteration
         pause(0.1)
     end
@@ -78,10 +84,21 @@ function finalRad= ExampleControlProgram(serPort)
 %     % Don't use these if you call RoombaInit prior to the control program
 end
 
-function sonarFront=tooClose(serPort)
-    sonarFront = ReadSonarMultiple(serPort, 1);
+function turnParallelWall(serPort, sonarFront, sonarRight)
+  [angWall1 angWall2 wallLength] = triangWall(sonarFront, sonarRight);
+  pause(0.2);
+  turnAngle(serPort, 0.2, angWall1)
+  pause(0.1);
+  SetFwdVelAngVelCreate(serPort,0.4,0)
 end
 
+function [angB angC wallLength] = triangWall(sensorC, sensorB)
+%triangWall uses two sonar senors, which are placed 90deg apart, to deduce
+%the angle of the bot in relation to the wall 
+    wallLength = sqrt(sensorC.^2 + sensorB.^2);
+    angB = asind(sensorC/wallLength);
+    angC = asind(sensorB/wallLength);
+end
     
     
     
