@@ -51,6 +51,7 @@ function finalRad= ExampleControlProgram(serPort)
 %                 SetFwdVelAngVelCreate(serPort,v,w)
 %             end
 %         end
+%
     
             frontDist = ReadSonar(serPort, 2);
             if frontDist <= 0.2
