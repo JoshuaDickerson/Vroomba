@@ -43,10 +43,20 @@ function finalRad= ExampleControlProgram(serPort)
     while toc(tStart) < maxDuration && distSansBump <= maxDistSansBump
         distSansBump= distSansBump+DistanceSensorRoomba(serPort);
         angTurned= angTurned+AngleSensorRoomba(serPort);
-        if toc(tStart) >= 8
-            w = 0.4;
-            SetFwdVelAngVelCreate(serPort,v,w)
-        end
+%         if toc(tStart) >= 8
+%             w = 0.4;
+%             SetFwdVelAngVelCreate(serPort,v,w)
+%             if toc(tStart)>=12
+%                 w = -0.4;
+%                 SetFwdVelAngVelCreate(serPort,v,w)
+%             end
+%         end
+    
+            frontDist = ReadSonar(serPort, 2);
+            if frontDist <= 0.2
+                SetFwdVelAngVelCreate(serPort,0,0)
+            end
+    
         % Briefly pause to avoid continuous loop iteration
         pause(0.1)
     end
@@ -67,7 +77,12 @@ function finalRad= ExampleControlProgram(serPort)
 %     % Don't use these if you call RoombaInit prior to the control program
 end
 
+function sonarFront=tooClose(serPort)
+    sonarFront = ReadSonarMultiple(serPort, 1);
+end
 
+    
+    
     
 
 
