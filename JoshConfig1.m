@@ -20,7 +20,7 @@ function finalRad= ExampleControlProgram(serPort)
 % CreateMatlabSim@gmail.com
 
     % Set constants for this program
-    maxDuration= 1200;  % Max time to allow the program to run (s)
+    maxDuration= 12000;  % Max time to allow the program to run (s)
     maxDistSansBump= 5; % Max distance to travel without obstacles (m)
     maxFwdVel= 0.5;     % Max allowable forward velocity with no angular 
                         % velocity at the time (m/s)
@@ -58,11 +58,16 @@ function finalRad= ExampleControlProgram(serPort)
 %  Below is the very beginning of an avoidance system
 %  only works when the bot is running into a wall, and is at an angle
 %  to the wall, such that the right beam can see the wall 
-            sonarFront = ReadSonar(serPort, 2);
-            if sonarFront <= 0.2
+            sonarArray = [ReadSonar(serPort, 2) ReadSonar(serPort, 1) ReadSonar(serPort, 3) ReadSonar(serPort,4 )];
+            if any(sonarArray<= 0.2)
                SetFwdVelAngVelCreate(serPort,0,0)
-               sonarRight = ReadSonar(serPort, 1);
-               turnParallelWall(serPort, sonarFront, sonarRight)
+               if sonarArray(2)<3
+                   turnParallelWall(serPort, sonarArray(1), sonarArray(2))
+               elseif sonarArray(3)<3
+                   turnParallelWall(serPort, sonarArray(1), sonarArray(3))
+               else
+                   turnAngle(serPort, 0.2, 45)
+               end
             end
         % Briefly pause to avoid continuous loop iteration
         pause(0.1)
@@ -87,7 +92,7 @@ end
 function turnParallelWall(serPort, sonarFront, sonarRight)
   [angWall1 angWall2 wallLength] = triangWall(sonarFront, sonarRight);
   pause(0.2);
-  turnAngle(serPort, 0.2, angWall1)
+  turnAngle(serPort, 0.2, angWall2)
   pause(0.1);
   SetFwdVelAngVelCreate(serPort,0.4,0)
 end
