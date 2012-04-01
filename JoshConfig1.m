@@ -20,7 +20,7 @@ function finalRad= ExampleControlProgram(serPort)
 % CreateMatlabSim@gmail.com
 
     % Set constants for this program
-    maxDuration= 12000;  % Max time to allow the program to run (s)
+    maxDuration= 9999;  % Max time to allow the program to run (s)
     maxDistSansBump= 5; % Max distance to travel without obstacles (m)
     maxFwdVel= 0.5;     % Max allowable forward velocity with no angular 
                         % velocity at the time (m/s)
@@ -62,7 +62,7 @@ function finalRad= ExampleControlProgram(serPort)
             if any(sonarArray<= 0.2)
                SetFwdVelAngVelCreate(serPort,0,0)
                if sonarArray(2)<3
-                   turnParallelWall(serPort, sonarArray(1), sonarArray(2))
+                   turnParallelWall(serPort, sonarArray(1), -1.*sonarArray(2))
                elseif sonarArray(3)<3
                    turnParallelWall(serPort, sonarArray(1), sonarArray(3))
                else
