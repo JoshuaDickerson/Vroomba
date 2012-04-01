@@ -1,23 +1,4 @@
-function finalRad= ExampleControlProgram(serPort)
-% Simple program for autonomously control the iRobot Create on either the
-% physical Create or the simulated version. This will simply spiral outward
-% and turn away from obstacles that detects with the bump sensors.
-%
-% For the physical Create only, it is assumed that the function call
-% serPort= RoombaInit(comPort) was done prior to running this program.
-% Calling RoombaInit is unnecessary if using the simulator.
-%
-% Input:
-% serPort - Serial port object, used for communicating over bluetooth
-%
-% Output:
-% finalRad - Double, final turning radius of the Create (m)
-
-% ExampleControlProgram.m
-% Copyright (C) 2011 Cornell University
-% This code is released under the open-source BSD license.  A copy of this
-% license should be provided with the software.  If not, email:
-% CreateMatlabSim@gmail.com
+function finalRad= ControlProgram(serPort)
 
     % Set constants for this program
     maxDuration= 9999;  % Max time to allow the program to run (s)
@@ -42,38 +23,27 @@ function finalRad= ExampleControlProgram(serPort)
     % Enter main loop
     while toc(tStart) < maxDuration && distSansBump <= maxDistSansBump
         distSansBump= distSansBump+DistanceSensorRoomba(serPort);
-        angTurned= angTurned+AngleSensorRoomba(serPort);
+        %angTurned= angTurned+AngleSensorRoomba(serPort);
 
-% Below if-loop is for moving the bot for a specific amount of time         
-%         if toc(tStart) >= 8
-%             w = 0.4;
-%             SetFwdVelAngVelCreate(serPort,v,w)
-%             if toc(tStart)>=12
-%                 w = -0.4;
-%                 SetFwdVelAngVelCreate(serPort,v,w)
-%             end
-%         end
-%
     
 %  Below is the very beginning of an avoidance system
-%  only works when the bot is running into a wall, and is at an angle
-%  to the wall, such that the right beam can see the wall 
             sonarArray = [ReadSonar(serPort, 2) ReadSonar(serPort, 1) ReadSonar(serPort, 3) ReadSonar(serPort,4 )];
             if any(sonarArray<= 0.3)
                 SetFwdVelAngVelCreate(serPort,0,0)
                 pause(0.1);
-                smallestDist = find(sonarArray == min(sonarArray))
-                tooNear = any(sonarArray < 0.1)
+                smallestDist = find(sonarArray == min(sonarArray));
+                tooNear = any(sonarArray < 0.1);
                 if smallestDist > 1 && tooNear == 0;
-                    SetFwdVelAngVelCreate(serPort,0.1,0)
+                    SetFwdVelAngVelCreate(serPort,0.3,0)
                 else
                     sonarArray = [ReadSonar(serPort, 2) ReadSonar(serPort, 1) ReadSonar(serPort, 3) ReadSonar(serPort,4 )];
-                    angleToTurn = decideWhichAngle(sonarArray)
+                    decAngle = decideWhichAngle(sonarArray);
+                    disp(decAngle(1))
+                    disp(decAngle(2))
+                    angleToTurn = max(decAngle)
                     turnAngle(serPort, 0.2, angleToTurn)
                 end
-                
-                pause(0.1)
-             end
+            end
         % Briefly pause to avoid continuous loop iteration
         pause(0.1)
     end
@@ -85,22 +55,9 @@ function finalRad= ExampleControlProgram(serPort)
     v= 0;
     w= 0;
     SetFwdVelAngVelCreate(serPort,v,w)
-     
-%     % If you call RoombaInit inside the control program, this would be a
-%     % good place to clean up the serial port with...
-%     % fclose(serPort)
-%     % delete(serPort)
-%     % clear(serPort)
-%     % Don't use these if you call RoombaInit prior to the control program
+
 end
 
-% function turnParallelWall(serPort, sonarFront, sonarRight)
-%   [angWall1 angWall2 wallLength] = triangWall(sonarFront, sonarRight);
-%   pause(0.2);
-%   turnAngle(serPort, 0.2, angWall2)
-%   pause(0.1);
-%   SetFwdVelAngVelCreate(serPort,0.4,0)
-% end
 
 function [angB angC wallLength] = triangWall(sensorC, sensorB)
 %triangWall uses two sonar senors, which are placed 90deg apart, to deduce
@@ -119,26 +76,9 @@ function returnAngle = decideWhichAngle(sonarArray)
     end
     %returnAngle = hotSensors;
     [triangulated(1) triangulated(2) triangulated(3)] = triangWall(hotSensors(1), hotSensors(2));
-    returnAngle = min(triangulated(2), triangulated(3));
-    
-    %if smallestDist == 1
-    %   SetFwdVelAngVelCreate(serPort,0,0)
-    %   turnAngle(serPort, 0.2, 45)
-    %elseif smallestDist == 4
-    %   SetFwdVelAngVelCreate(serPort,0,0.3)
-    %elseif smallestDist == 3
-    %   turnParallelWall(serPort, sonarArray(1), -1.*sonarArray(3))
-    %else
-    %   turnParallelWall(serPort, sonarArray(1), sonarArray(2))
-    %end
+    returnAngle = [triangulated(2) triangulated(3)];
 
 end
-
-
-    
-    
-    
-
 
 
 function w= v2w(v)
