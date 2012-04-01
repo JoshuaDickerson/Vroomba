@@ -59,19 +59,20 @@ function finalRad= ExampleControlProgram(serPort)
 %  only works when the bot is running into a wall, and is at an angle
 %  to the wall, such that the right beam can see the wall 
             sonarArray = [ReadSonar(serPort, 2) ReadSonar(serPort, 1) ReadSonar(serPort, 3) ReadSonar(serPort,4 )];
-            if any(sonarArray<= 0.2)
-                % smallestDist is the sensor with the shortest distance
-                smallestDist = find(sonarArray == min(sonarArray));
-                if smallestDist == 1
-                    SetFwdVelAngVelCreate(serPort,0,0)
-                    turnAngle(serPort, 0.2, 45)
-                elseif smallestDist == 4
-                     SetFwdVelAngVelCreate(serPort,0,0.3)
-                elseif smallestDist == 3
-                     turnParallelWall(serPort, sonarArray(1), -1.*sonarArray(3))
+            if any(sonarArray<= 0.3)
+                SetFwdVelAngVelCreate(serPort,0,0)
+                pause(0.1);
+                smallestDist = find(sonarArray == min(sonarArray))
+                tooNear = any(sonarArray < 0.1)
+                if smallestDist > 1 && tooNear == 0;
+                    SetFwdVelAngVelCreate(serPort,0.1,0)
                 else
-                     turnParallelWall(serPort, sonarArray(1), sonarArray(2))
+                    sonarArray = [ReadSonar(serPort, 2) ReadSonar(serPort, 1) ReadSonar(serPort, 3) ReadSonar(serPort,4 )];
+                    angleToTurn = decideWhichAngle(sonarArray)
+                    turnAngle(serPort, 0.2, angleToTurn)
                 end
+                
+                pause(0.1)
              end
         % Briefly pause to avoid continuous loop iteration
         pause(0.1)
@@ -93,13 +94,13 @@ function finalRad= ExampleControlProgram(serPort)
 %     % Don't use these if you call RoombaInit prior to the control program
 end
 
-function turnParallelWall(serPort, sonarFront, sonarRight)
-  [angWall1 angWall2 wallLength] = triangWall(sonarFront, sonarRight);
-  pause(0.2);
-  turnAngle(serPort, 0.2, angWall2)
-  pause(0.1);
-  SetFwdVelAngVelCreate(serPort,0.4,0)
-end
+% function turnParallelWall(serPort, sonarFront, sonarRight)
+%   [angWall1 angWall2 wallLength] = triangWall(sonarFront, sonarRight);
+%   pause(0.2);
+%   turnAngle(serPort, 0.2, angWall2)
+%   pause(0.1);
+%   SetFwdVelAngVelCreate(serPort,0.4,0)
+% end
 
 function [angB angC wallLength] = triangWall(sensorC, sensorB)
 %triangWall uses two sonar senors, which are placed 90deg apart, to deduce
@@ -108,6 +109,32 @@ function [angB angC wallLength] = triangWall(sensorC, sensorB)
     angB = asind(sensorC/wallLength);
     angC = asind(sensorB/wallLength);
 end
+
+function returnAngle = decideWhichAngle(sonarArray)
+    smallestDist = find(sonarArray == min(sonarArray));
+    hotSensors = find(sonarArray < 3);
+    counter = length(hotSensors);
+    for ii=1:counter
+        hotSensors(ii) = sonarArray(hotSensors(ii));
+    end
+    %returnAngle = hotSensors;
+    [triangulated(1) triangulated(2) triangulated(3)] = triangWall(hotSensors(1), hotSensors(2));
+    returnAngle = min(triangulated(2), triangulated(3));
+    
+    %if smallestDist == 1
+    %   SetFwdVelAngVelCreate(serPort,0,0)
+    %   turnAngle(serPort, 0.2, 45)
+    %elseif smallestDist == 4
+    %   SetFwdVelAngVelCreate(serPort,0,0.3)
+    %elseif smallestDist == 3
+    %   turnParallelWall(serPort, sonarArray(1), -1.*sonarArray(3))
+    %else
+    %   turnParallelWall(serPort, sonarArray(1), sonarArray(2))
+    %end
+
+end
+
+
     
     
     
