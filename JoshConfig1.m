@@ -60,15 +60,19 @@ function finalRad= ExampleControlProgram(serPort)
 %  to the wall, such that the right beam can see the wall 
             sonarArray = [ReadSonar(serPort, 2) ReadSonar(serPort, 1) ReadSonar(serPort, 3) ReadSonar(serPort,4 )];
             if any(sonarArray<= 0.2)
-               SetFwdVelAngVelCreate(serPort,0,0)
-               if sonarArray(2)<3
-                   turnParallelWall(serPort, sonarArray(1), -1.*sonarArray(2))
-               elseif sonarArray(3)<3
-                   turnParallelWall(serPort, sonarArray(1), sonarArray(3))
-               else
-                   turnAngle(serPort, 0.2, 45)
-               end
-            end
+                % smallestDist is the sensor with the shortest distance
+                smallestDist = find(sonarArray == min(sonarArray));
+                if smallestDist == 1
+                    SetFwdVelAngVelCreate(serPort,0,0)
+                    turnAngle(serPort, 0.2, 45)
+                elseif smallestDist == 4
+                     SetFwdVelAngVelCreate(serPort,0,0.3)
+                elseif smallestDist == 3
+                     turnParallelWall(serPort, sonarArray(1), -1.*sonarArray(3))
+                else
+                     turnParallelWall(serPort, sonarArray(1), sonarArray(2))
+                end
+             end
         % Briefly pause to avoid continuous loop iteration
         pause(0.1)
     end
