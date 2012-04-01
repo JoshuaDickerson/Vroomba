@@ -21,7 +21,7 @@ function finalRad= ExampleControlProgram(serPort)
 
     % Set constants for this program
     maxDuration= 9999;  % Max time to allow the program to run (s)
-    maxDistSansBump= 5; % Max distance to travel without obstacles (m)
+    maxDistSansBump= 999; % Max distance to travel without obstacles (m)
     maxFwdVel= 0.5;     % Max allowable forward velocity with no angular 
                         % velocity at the time (m/s)
     maxVelIncr= 0.005;  % Max incrementation of forward velocity (m/s)
