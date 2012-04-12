@@ -73,26 +73,35 @@ function [sonarHot stopToken] = sonarCheckReact(serPort, stopToken)
     
     if sonarArray(1) < 0.2 || sonarArray(2)<0.2 || sonarArray(3)<0.2
        stopBot(serPort)
-       smallestDist = find(sonarArray == min(sonarArray))
+       smallestDist = find(sonarArray == min(sonarArray(2), sonarArray(3), sonarArray(1)));
+       [ang1 ang2 wallLength] = triangWall(sonarArray(1), sonarArray(smallestDist));
+       if ang1/ang2 < 2
+           disp('in a corner')
+       end
        while smallestDist == 1
         turnAngle(serPort, 0.2, 3)
         sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
-        smallestDist = find(sonarArray == min(sonarArray));
+        smallestDist = find(sonarArray == min(sonarArray(2), sonarArray(3), sonarArray(1)));
        end
         sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
-        smallestDist = find(sonarArray == min(sonarArray))
+        smallestDist = find(sonarArray == min(sonarArray(2), sonarArray(3), sonarArray(1)));
        [ang1 ang2 wallLength] = triangWall(sonarArray(1), sonarArray(smallestDist));
              
        if smallestDist == 2
-           ang2 = ang2;
+           angToTurn = ang2;
        elseif smallestDist == 3
-           ang2 = -1.*ang1
+           ang2 = -1.*ang2;
        end
            if stopToken == 0
-           turnAngle(serPort, 0.2, ang2)
+               turnAngle(serPort, 0.2, ang2)
+               pause(0.1)
+               stopToken = 1;
+           else 
+               pause(0.1)
+               SetFwdVelAngVelCreate(serPort,0.2,0)
+               stopToken = 0;
            end
-           pause(0.1)
-           stopToken = 1;
+           
            sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
        
     end
