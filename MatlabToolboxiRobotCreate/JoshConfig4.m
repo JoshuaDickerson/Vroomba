@@ -19,13 +19,13 @@ function finalRad= ControlProgram(serPort)
     
     % Start robot moving
     SetFwdVelAngVelCreate(serPort,v,w)
-    
+    stopToken = 0;
     % Enter main loop
     while toc(tStart) < maxDuration && distSansBump <= maxDistSansBump
         
         %angTurned= angTurned+AngleSensorRoomba(serPort);
-
-        sonarHot = sonarCheckReact(serPort);
+        
+        [sonarHot stopToken] = sonarCheckReact(serPort, stopToken);
     
 %  Below is the very beginning of an avoidance system
             
@@ -68,8 +68,9 @@ function finalRad= ControlProgram(serPort)
 end
 
 
-function sonarHot = sonarCheckReact(serPort)
+function [sonarHot stopToken] = sonarCheckReact(serPort, stopToken)
     sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+    
     if sonarArray(1) < 0.2 || sonarArray(2)<0.1 || sonarArray(3)<0.1
        stopBot(serPort)
        smallestDist = find(sonarArray == min(sonarArray))
@@ -81,14 +82,17 @@ function sonarHot = sonarCheckReact(serPort)
         sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
         smallestDist = find(sonarArray == min(sonarArray))
        [ang1 ang2 wallLength] = triangWall(sonarArray(1), sonarArray(smallestDist));
-       
+             
        if smallestDist == 2
            ang2 = ang2;
        elseif smallestDist == 3
            ang2 = -1.*ang2
        end
+           if stopToken == 0
            turnAngle(serPort, 0.2, ang2)
+           end
            pause(0.1)
+           stopToken = 1;
            sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
        
     end
