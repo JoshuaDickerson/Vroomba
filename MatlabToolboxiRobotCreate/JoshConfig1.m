@@ -27,25 +27,33 @@ function finalRad= ControlProgram(serPort)
 
     
 %  Below is the very beginning of an avoidance system
-            sonarArray = [ReadSonar(serPort, 2) ReadSonar(serPort, 1) ReadSonar(serPort, 3) ReadSonar(serPort,4 )];
-            if any(sonarArray<= 0.3)
+            sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+            if sonarArray(1) < 0.3
+                sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
                 SetFwdVelAngVelCreate(serPort,0,0)
                 pause(0.1);
-                smallestDist = find(sonarArray == min(sonarArray));
-                tooNear = any(sonarArray < 0.1);
-                if smallestDist > 1 && tooNear == 0;
-                    SetFwdVelAngVelCreate(serPort,0.3,0)
+                smallestDist = find(sonarArray == min(sonarArray(2), sonarArray(3)));
+                %SetFwdVelAngVelCreate(serPort,-0.3,0)
+                pause(0.2)
+                SetFwdVelAngVelCreate(serPort,0.0,0)
+                sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+                if sonarArray(1) < 1.3
+                    if smallestDist == 3
+                        angle=convertAngles(3, 'cw');
+                        turnAngle(serPort, 0.2, angle);
+                        sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+                    else
+                        angle=3;
+                        turnAngle(serPort, 0.2, angle);
+                        sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+                    end
                 else
-                    sonarArray = [ReadSonar(serPort, 2) ReadSonar(serPort, 1) ReadSonar(serPort, 3) ReadSonar(serPort,4 )];
-                    decAngle = decideWhichAngle(sonarArray);
-                    disp(decAngle(1));
-                    disp(decAngle(2));
-                    angleToTurn = max(decAngle)
-                    turnAngle(serPort, 0.2, angleToTurn)
+                % Briefly pause to avoid continuous loop iteration
+                pause(0.1)
+                SetFwdVelAngVelCreate(serPort,0.05,0)
                 end
             end
-        % Briefly pause to avoid continuous loop iteration
-        pause(0.1)
+        
     end
     
     % Specify output parameter
@@ -57,6 +65,13 @@ function finalRad= ControlProgram(serPort)
     SetFwdVelAngVelCreate(serPort,v,w)
 
 end
+
+function angle = convertAngles(angle, direction)
+    if direction =='cw'
+        angle = (-1).*angle
+    end
+end
+
 
 
 function [angB angC wallLength] = triangWall(sensorC, sensorB)

@@ -22,30 +22,39 @@ function finalRad= ControlProgram(serPort)
     
     % Enter main loop
     while toc(tStart) < maxDuration && distSansBump <= maxDistSansBump
-        distSansBump= distSansBump+DistanceSensorRoomba(serPort);
+        
         %angTurned= angTurned+AngleSensorRoomba(serPort);
 
+        sonarHot = sonarCheckReact(serPort);
     
 %  Below is the very beginning of an avoidance system
-            sonarArray = [ReadSonar(serPort, 2) ReadSonar(serPort, 1) ReadSonar(serPort, 3) ReadSonar(serPort,4 )];
-            if any(sonarArray<= 0.3)
-                SetFwdVelAngVelCreate(serPort,0,0)
-                pause(0.1);
-                smallestDist = find(sonarArray == min(sonarArray));
-                tooNear = any(sonarArray < 0.1);
-                if smallestDist > 1 && tooNear == 0;
-                    SetFwdVelAngVelCreate(serPort,0.3,0)
-                else
-                    sonarArray = [ReadSonar(serPort, 2) ReadSonar(serPort, 1) ReadSonar(serPort, 3) ReadSonar(serPort,4 )];
-                    decAngle = decideWhichAngle(sonarArray);
-                    disp(decAngle(1));
-                    disp(decAngle(2));
-                    angleToTurn = max(decAngle)
-                    turnAngle(serPort, 0.2, angleToTurn)
-                end
-            end
-        % Briefly pause to avoid continuous loop iteration
-        pause(0.1)
+            
+%             if sonarArray(1) < 0.3
+%                 sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+%                 SetFwdVelAngVelCreate(serPort,0,0)
+%                 pause(0.1);
+%                 smallestDist = find(sonarArray == min(sonarArray(2), sonarArray(3)));
+%                 %SetFwdVelAngVelCreate(serPort,-0.3,0)
+%                 pause(0.2)
+%                 SetFwdVelAngVelCreate(serPort,0.0,0)
+%                 sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+%                 if sonarArray(1) < 1.3
+%                     if smallestDist == 3
+%                         angle=convertAngles(3, 'cw');
+%                         turnAngle(serPort, 0.2, angle);
+%                         sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+%                     else
+%                         angle=3;
+%                         turnAngle(serPort, 0.2, angle);
+%                         sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+%                     end
+%                 else
+%                 % Briefly pause to avoid continuous loop iteration
+%                 pause(0.1)
+%                 SetFwdVelAngVelCreate(serPort,0.05,0)
+%                 end
+%             end
+        
     end
     
     % Specify output parameter
@@ -57,6 +66,37 @@ function finalRad= ControlProgram(serPort)
     SetFwdVelAngVelCreate(serPort,v,w)
 
 end
+
+
+function sonarHot = sonarCheckReact(serPort)
+    sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+    if sonarArray(1) < 0.2 || sonarArray(2)<0.1 || sonarArray(3)<0.1
+       stopBot(serPort)
+       smallestDist = find(sonarArray == min(sonarArray))
+       while smallestDist == 1
+        turnAngle(serPort, 0.2, 3)
+        sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+        smallestDist = find(sonarArray == min(sonarArray))
+       end
+       
+    end
+    pause(0.1)
+    sonarHot = min(sonarArray);
+    
+end
+
+function stopBot(serPort)
+SetFwdVelAngVelCreate(serPort,0,0)
+end
+
+
+
+function angle = convertAngles(angle, direction)
+    if direction =='cw'
+        angle = (-1).*angle
+    end
+end
+
 
 
 function [angB angC wallLength] = triangWall(sensorC, sensorB)

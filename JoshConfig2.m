@@ -18,32 +18,44 @@ function finalRad= ControlProgram(serPort)
     w= 0.0;          % Angular velocity (rad/s)
     
     % Start robot moving
-    SetFwdVelAngVelCreate(serPort,v,w)
+    SetFwdVelAngVelCreate(serPort,0,0)
     
     % Enter main loop
     while toc(tStart) < maxDuration && distSansBump <= maxDistSansBump
         distSansBump= distSansBump+DistanceSensorRoomba(serPort);
-        %angTurned= angTurned+AngleSensorRoomba(serPort);
 
     
 %  Below is the very beginning of an avoidance system
-            sonarArray = [ReadSonar(serPort, 2) ReadSonar(serPort, 1) ReadSonar(serPort, 3) ReadSonar(serPort,4 )];
-            if any(sonarArray<= 0.3)
-                SetFwdVelAngVelCreate(serPort,0,0)
-                pause(0.1);
-                smallestDist = find(sonarArray == min(sonarArray));
-                tooNear = any(sonarArray < 0.1);
-                if smallestDist > 1 && tooNear == 0;
-                    SetFwdVelAngVelCreate(serPort,0.3,0)
-                else
-                    sonarArray = [ReadSonar(serPort, 2) ReadSonar(serPort, 1) ReadSonar(serPort, 3) ReadSonar(serPort,4 )];
-                    decAngle = decideWhichAngle(sonarArray);
-                    disp(decAngle(1));
-                    disp(decAngle(2));
-                    angleToTurn = max(decAngle)
-                    turnAngle(serPort, 0.2, angleToTurn)
+
+% sonarArray(1)=front sonarArray(2)=right sonarArray(3)=left
+% sonarArray(4)=rear
+            SetFwdVelAngVelCreate(serPort,0.5,0)
+            sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+                % if the front sonar reads less than 0.3m
+                if sonarArray(1)<0.3
+                    % if the left or right sonar reads less than 0.1
+                    if sonarArray(2)<0.1 || sonarArray(3)<0.1
+                        % stop the bot
+                        SetFwdVelAngVelCreate(serPort,0.0,0)
+                        % grab a reading
+                        sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+                        smallestDist = find(sonarArray == min(sonarArray(2), sonarArray(3)))
+                        % if the smallest is the left sensor, turn the bot
+                        % clockwise
+                        if smallestDist == 3
+                            angle=convertAngles(3, 'cw');
+                        else
+                            angle=3;
+                        end
+                      
+                      turnAngle(serPort, 0.2, angle);
+                    end
+                    SetFwdVelAngVelCreate(serPort,0.1,0)
+                    turnAngle(serPort, 0.2, 3);
+                    sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
                 end
-            end
+
+           
         % Briefly pause to avoid continuous loop iteration
         pause(0.1)
     end
@@ -58,10 +70,20 @@ function finalRad= ControlProgram(serPort)
 
 end
 
+function angle = convertAngles(angle, direction)
+    if direction =='cw'
+        angle = (-1).*angle
+    end
+end
 
-function [angB angC wallLength] = triangWall(sensorC, sensorB)
-%triangWall uses two sonar senors, which are placed 90deg apart, to deduce
+
+function [angB angC] = triangWall(sonarArray)
+%triangWall uses two sonar senors, which are placed 90deg or 180deg apart, to deduce
 %the angle of the bot in relation to the wall 
+    if sonarArray(2) < 3.0 && sonarArray(3) < 3.0 && sonarArray(1) < 3.0
+        lengthHyp = sonarArray(2)+sonarArray(3);
+    end
+    
     wallLength = sqrt(sensorC.^2 + sensorB.^2);
     angB = asind(sensorC/wallLength);
     angC = asind(sensorB/wallLength);
@@ -78,6 +100,18 @@ function returnAngle = decideWhichAngle(sonarArray)
     [triangulated(1) triangulated(2) triangulated(3)] = triangWall(hotSensors(1), hotSensors(2));
     returnAngle = [triangulated(2) triangulated(3)];
 
+end
+
+function turnParallel(sideToPar, sonarArray)
+
+
+end
+
+function getOutCorner(serPort, sonarArray)
+    while sonarArray(1)<2.7
+        turnAngle(serPort, 0.2, 1);
+        sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+    end
 end
 
 
