@@ -78,6 +78,16 @@ function sonarHot = sonarCheckReact(serPort)
         sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
         smallestDist = find(sonarArray == min(sonarArray))
        end
+        sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+        smallestDist = find(sonarArray == min(sonarArray))
+       [ang1 ang2 wallLength] = triangWall(sonarArray(1), sonarArray(smallestDist))
+       
+       if smallestDist == 2
+           turnAngle(serPort, 0.2, ang2)
+       elseif smallestDist == 3
+           ang2 = -1.*ang2
+           turnAngle(serPort, 0.2, ang2)
+       end
        
     end
     pause(0.1)
