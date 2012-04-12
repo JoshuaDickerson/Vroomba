@@ -71,7 +71,7 @@ end
 function [sonarHot stopToken] = sonarCheckReact(serPort, stopToken)
     sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
     
-    if sonarArray(1) < 0.2 || sonarArray(2)<0.1 || sonarArray(3)<0.1
+    if sonarArray(1) < 0.2 || sonarArray(2)<0.2 || sonarArray(3)<0.2
        stopBot(serPort)
        smallestDist = find(sonarArray == min(sonarArray))
        while smallestDist == 1
@@ -86,7 +86,7 @@ function [sonarHot stopToken] = sonarCheckReact(serPort, stopToken)
        if smallestDist == 2
            ang2 = ang2;
        elseif smallestDist == 3
-           ang2 = -1.*ang2
+           ang2 = -1.*ang1
        end
            if stopToken == 0
            turnAngle(serPort, 0.2, ang2)
