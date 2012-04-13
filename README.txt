@@ -1,6 +1,5 @@
 Vroomba UVM -- The UVM CSC Roomba project --  
 
-
 1)	To use the bot without a live connection to a command-issuing computer, code must be written in C
 	Matlab toolbox only useful if roomba is connected to a PC via SerialPort or Bluetooth	
 
