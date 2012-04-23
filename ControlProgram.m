@@ -78,8 +78,11 @@ function [stopToken] = sonarCheck(serPort, stopToken)
 end
 
 function stopBot(serPort)
-SetFwdVelAngVelCreate(serPort,0,0)
-distTraveled = DistanceSensorRoomba(serPort)
+    SetFwdVelAngVelCreate(serPort,0,0)
+    distTraveled = DistanceSensorRoomba(serPort)
+    fh = fopen('roombaLog.dat', 'a+');
+    fprintf(fh, '%0.4f\n', distTraveled);
+    fclose(fh);
 end
 
 
@@ -106,26 +109,27 @@ function reactToWall(serPort, sonarArray)
     
     if sonarArray(2)>1.3 && sonarArray(3)>1.3 && sonarArray(4)>1
         % wall is just front
-        turnAngle(serPort, 0.2, 90)
+        turnBot(serPort, 90)
         
     elseif sonarArray(2)>1.3 && sonarArray(3)>1.3 && sonarArray(1)>1
         %wall is just rear
-        turnAngle(serPort, 0.2, 90)
+        turnBot(serPort, convertAngles(90))
         
     elseif smallestDist(1) == 1 &&  smallestDist(2) == 2
         % wall is front and right -- must turn ccw
         disp(' wall is front/right -- must turn ccw')
         [angleFB angleRL wallLength] = triangWall(sonarArray(1), sonarArray(2));
         angleToTurn = 90-angleFB
-        turnAngle(serPort, 0.2, angleToTurn);
-        
+        turnBot(serPort, angleToTurn)
     elseif smallestDist(1) == 1 &&  smallestDist(2) == 3
         % wall is front and left - must turn clockwise
         disp(' wall is front/left -- must turn cw')
         [angleFB angleRL wallLength] = triangWall(sonarArray(1), sonarArray(3));
         % turn CW
         angleToTurn = angleFB
-        turnAngle(serPort, 0.2, convertAngles(angleToTurn));
+        turnBot(serPort, convertAngles(angleToTurn))
+        
+        
         
   %  elseif smallestDist(1) == 4 &&  smallestDist(2) == 2
   %      % wall is rear and right
@@ -144,26 +148,34 @@ function reactToWall(serPort, sonarArray)
 end
 
 
+function turnBot(serPort, angleToTurn)
+    turnAngle(serPort, 0.2, angleToTurn);
+    fh = fopen('roombaLog.dat', 'a+');
+    fprintf(fh, '\t\t\t%0.4f\n', angleToTurn);
+    fclose(fh);
+    pause(0.1);
+end
+
 function angle = convertAngles(angle)
         angle = (-1).*angle
 end
 
-
-function botConfused(serPort)
-sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
-if sonarArray(1) < 2
-   while sonarArray(1)<2 
-    SetFwdVelAngVelCreate(serPort,0.5,0)
-    sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
-   end
-elseif sonarArray(4) < 2
-   while sonarArray(4)<2 
-    SetFwdVelAngVelCreate(serPort,-0.5,0)
-    sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
-   end
-end
-    
-end
+% 
+% function botConfused(serPort)
+% sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+% if sonarArray(1) < 2
+%    while sonarArray(1)<2 
+%     SetFwdVelAngVelCreate(serPort,0.5,0)
+%     sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+%    end
+% elseif sonarArray(4) < 2
+%    while sonarArray(4)<2 
+%     SetFwdVelAngVelCreate(serPort,-0.5,0)
+%     sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+%    end
+% end
+%     
+% end
 
 function [angFB angLR wallLength] = triangWall(sensorFB, sensorLR)
 %triangWall uses two sonar senors, which are placed 90deg apart, to deduce
@@ -173,18 +185,6 @@ function [angFB angLR wallLength] = triangWall(sensorFB, sensorLR)
     angLR = asind(sensorLR/wallLength)
 end
 
-function returnAngle = decideWhichAngle(sonarArray)
-    smallestDist = find(sonarArray == min(sonarArray));
-    hotSensors = find(sonarArray < 3);
-    counter = length(hotSensors);
-    for ii=1:counter
-        hotSensors(ii) = sonarArray(hotSensors(ii));
-    end
-    %returnAngle = hotSensors;
-    [triangulated(1) triangulated(2) triangulated(3)] = triangWall(hotSensors(1), hotSensors(2));
-    returnAngle = [triangulated(2) triangulated(3)];
-
-end
 
 
 function w= v2w(v)
