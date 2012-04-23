@@ -24,7 +24,7 @@ function finalRad= ControlProgram(serPort)
     % Start robot moving
     SetFwdVelAngVelCreate(serPort,v,w)
     stopToken = 0;
-    % Enter main loop
+    % Enter main loop 
     while toc(tStart) < maxDuration
         
         %angTurned= angTurned+AngleSensorRoomba(serPort);
@@ -88,15 +88,21 @@ function [sonarHot stopToken] = sonarCheckReact(serPort, stopToken)
         smallestDist = find(sonarArray == min(sonarArray(2), sonarArray(3)));
        end
         sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
-        smallestDistSide = find(sonarArray == min(sonarArray(2), sonarArray(3)));
-        smallestDistFR = find(sonarArray == min(sonarArray(1), sonarArray(4)));
+        smallestDistSide = find(sonarArray == min(sonarArray(2), sonarArray(3)))
+        smallestDistFR = find(sonarArray == min(sonarArray(1), sonarArray(4)))
        [ang1 ang2 wallLength] = triangWall(sonarArray(smallestDistFR), sonarArray(smallestDistSide));
+        
        
              
        if smallestDist == 2 && sonarArray(1)<2
            angToTurn = ang2;
        elseif smallestDist == 3 && sonarArray(1)<2
            angToTurn = -1.*ang2;
+       elseif smallestDist == 3 && sonarArray(4)<2
+           angToTurn = -1.*ang2;
+       elseif smallestDist == 2 && sonarArray(4)<2
+           angToTurn = ang2;
+       else angToTurn = 45;
        end
            if stopToken == 0
                turnAngle(serPort, 0.2, angToTurn);
@@ -112,7 +118,10 @@ function [sonarHot stopToken] = sonarCheckReact(serPort, stopToken)
     end
     pause(0.1)
     sonarHot = min(sonarArray);
-    iterateCount = iterateCount+1
+    iterateCount = iterateCount+1;
+    if iterateCount > 15 && distTraveled == 0
+        botConfused(serPort);
+    end
     
 end
 
@@ -129,14 +138,28 @@ function angle = convertAngles(angle, direction)
     end
 end
 
-
+function botConfused(serPort)
+sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+if sonarArray(1) < 2
+   while sonarArray(1)<2 
+    SetFwdVelAngVelCreate(serPort,0.5,0)
+    sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+   end
+elseif sonarArray(4) < 2
+   while sonarArray(4)<2 
+    SetFwdVelAngVelCreate(serPort,-0.5,0)
+    sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+   end
+end
+    
+end
 
 function [angB angC wallLength] = triangWall(sensorC, sensorB)
 %triangWall uses two sonar senors, which are placed 90deg apart, to deduce
 %the angle of the bot in relation to the wall 
     wallLength = sqrt(sensorC.^2 + sensorB.^2);
-    angB = asind(sensorC/wallLength);
-    angC = asind(sensorB/wallLength);
+    angB = asind(sensorC/wallLength)
+    angC = asind(sensorB/wallLength)
 end
 
 function returnAngle = decideWhichAngle(sonarArray)
