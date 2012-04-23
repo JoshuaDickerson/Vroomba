@@ -100,7 +100,7 @@ function reactToWall(serPort, sonarArray)
         disp(' wall is front/left -- must turn cw')
         [angleFB angleRL wallLength] = triangWall(sonarArray(1), sonarArray(3));
         % turn CW
-        angleToTurn = 180-angleFB
+        angleToTurn = angleFB
         turnAngle(serPort, 0.2, convertAngles(angleToTurn));
         
     elseif smallestDist(1) == 4 &&  smallestDist(2) == 2

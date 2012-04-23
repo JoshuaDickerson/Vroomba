@@ -34,7 +34,7 @@ function finalRad= ControlProgram2(serPort)
         % test ccw -180 to -360degrees
         %       turnAngle(serPort, 0.2, -190);
         % test cw 0 to -180degrees
-        %       turnAngle(serPort, 0.2, -23);
+               turnAngle(serPort, 0.2, 53);
         % test cw 180 to 360degrees
         %       turnAngle(serPort, 0.2, 190);
         
