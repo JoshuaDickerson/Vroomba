@@ -89,32 +89,32 @@ function reactToWall(serPort, sonarArray)
         turnAngle(serPort, 0.2, 90)
         
     elseif smallestDist(1) == 1 &&  smallestDist(2) == 2
-        % wall is front and right
+        % wall is front and right -- must turn ccw
         [angleFB angleRL wallLength] = triangWall(sonarArray(1), sonarArray(2));
-        angleToTurn = 180-angleFB;
+        angleToTurn = angleFB
         turnAngle(serPort, 0.2, angleToTurn);
         
     elseif smallestDist(1) == 1 &&  smallestDist(2) == 3
         % wall is front and left - must turn clockwise
         [angleFB angleRL wallLength] = triangWall(sonarArray(1), sonarArray(3));
         % turn CW
-        angleToTurn = 180-angleFB;
+        angleToTurn = 180-angleFB
         turnAngle(serPort, 0.2, convertAngles(angleToTurn));
         
     elseif smallestDist(1) == 4 &&  smallestDist(2) == 2
         % wall is rear and right
         [angleFB angleRL wallLength] = triangWall(sonarArray(4), sonarArray(2));
-        angleToTurn = 180-angleFB;
+        angleToTurn = 180-angleFB
         turnAngle(serPort, 0.2, convertAngles(angleToTurn));
         
     elseif smallestDist(1) == 4 &&  smallestDist(2) == 3
         % wall is rear and left
         [angleFB angleRL wallLength] = triangWall(sonarArray(4), sonarArray(2));
-        angleToTurn = 180-angleFB;
+        angleToTurn = 180-angleFB
         turnAngle(serPort, 0.2, convertAngles(angleToTurn));
 
     end
-    SetFwdVelAngVelCreate(serPort,0.5,0)
+    SetFwdVelAngVelCreate(serPort,0.2,0)
 end
 
 
