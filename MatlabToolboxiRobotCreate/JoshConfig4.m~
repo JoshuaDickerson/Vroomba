@@ -1,5 +1,8 @@
 function finalRad= ControlProgram(serPort)
 
+    % git@github.com:/Vroomba/Vroomba.git
+
+
     % Set constants for this program
     maxDuration= 9999;  % Max time to allow the program to run (s)
     maxDistSansBump= 999; % Max distance to travel without obstacles (m)
@@ -76,7 +79,7 @@ function [sonarHot stopToken] = sonarCheckReact(serPort, stopToken)
        stopBot(serPort)
        smallestDist = find(sonarArray == min(sonarArray(2), sonarArray(3)));
        [ang1 ang2 wallLength] = triangWall(sonarArray(1), sonarArray(smallestDist));
-       if ang1/ang2 < 2
+       if ang1/ang2 < 2 && sonarArray(2)<1 && sonarArray(3)<1
            disp('in a corner')
        end
        while smallestDist == 1
@@ -88,9 +91,9 @@ function [sonarHot stopToken] = sonarCheckReact(serPort, stopToken)
         smallestDist = find(sonarArray == min(sonarArray(2), sonarArray(3)));
        [ang1 ang2 wallLength] = triangWall(sonarArray(1), sonarArray(smallestDist));
              
-       if smallestDist == 2
+       if smallestDist == 2 && sonarArray(1)<2
            angToTurn = ang2;
-       elseif smallestDist == 3
+       elseif smallestDist == 3 && sonarArray(1)<2
            angToTurn = -1.*ang2;
        end
            if stopToken == 0

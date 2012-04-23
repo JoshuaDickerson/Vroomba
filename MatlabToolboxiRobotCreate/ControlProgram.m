@@ -89,11 +89,8 @@ function [sonarHot stopToken] = sonarCheckReact(serPort, stopToken)
     if any(sonarArray) < 0.2
        stopBot(serPort)
        sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
-       % smallestDist(1) = index of the shortest sonar beams Front or Rear
-       % smallestDist(2) = index of the shortest sonar beams Right or Left 
-       smallestDist(2) = find(sonarArray == min(sonarArray(2), sonarArray(3)))
-       smallestDist(1) = find(sonarArray == min(sonarArray(1), sonarArray(4)))
-       reactToWall(serPort, smallestDist);
+
+       reactToWall(serPort, sonarArray);
 
        
        smallestDist = find(sonarArray == min(sonarArray(2), sonarArray(3)));
@@ -147,29 +144,41 @@ distTraveled = DistanceSensorRoomba(serPort)
 end
 
 
-function reactToWall(serPort, smallestDist)
-% reactToWall takes 2 arguments serPort, and a vector containing 2 integers
-% smallestDist(1) = the index of the shortest sonar beam , front or rear
-% (1, 4)
-% smallestDist(2) = the index of the shortest sonar beam , Left or Right
-% (3, 2)
-    sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+function reactToWall(serPort, sonarArray)
+% reactToWall takes 2 arguments serPort, and a vector containing all sonar
+% readings
+
+    % smallestDist(1) = index of the shortest sonar beams Front or Rear
+    % smallestDist(2) = index of the shortest sonar beams Right or Left 
+    smallestDist(2) = find(sonarArray == min(sonarArray(2), sonarArray(3)))
+    smallestDist(1) = find(sonarArray == min(sonarArray(1), sonarArray(4)))
+
     if sonarArray(2)>1 && sonarArray(3)>1 && sonarArray(4)>1
         % wall is just front
         turnAngle(serPort, 0.2, 90)
+        
     elseif sonarArray(2)>1 && sonarArray(3)>1 && sonarArray(1)>1
         %wall is just rear
         turnAngle(serPort, 0.2, 90)
+        
     elseif smallestDist(1) == 1 &&  smallestDist(2) == 2
         % wall is front and right
+        [angleFront angleRight wallLength] = triangWall(sonarArray(1), sonarArray(2));
         turnAngle(serPort, 0.2, angleToTurn);
+        
     elseif smallestDist(1) == 1 &&  smallestDist(2) == 3
         % wall is front and left
+        [angleFront angleLeft wallLength] = triangWall(sonarArray(1), sonarArray(3));
         turnAngle(serPort, 0.2, convertAngles(angleToTurn));
+        
     elseif smallestDist(1) == 4 &&  smallestDist(2) == 2
         % wall is rear and right
+        [angleRear angleRight wallLength] = triangWall(sonarArray(4), sonarArray(2));
+        
     elseif smallestDist(1) == 4 &&  smallestDist(2) == 3
         % wall is rear and left
+        [angleRear angleRight wallLength] = triangWall(sonarArray(4), sonarArray(2));
+
     end
 end
 
@@ -195,12 +204,12 @@ end
     
 end
 
-function [angB angC wallLength] = triangWall(sensorC, sensorB)
+function [angFB angLR wallLength] = triangWall(sensorFB, sensorLR)
 %triangWall uses two sonar senors, which are placed 90deg apart, to deduce
 %the angle of the bot in relation to the wall 
-    wallLength = sqrt(sensorC.^2 + sensorB.^2);
-    angB = asind(sensorC/wallLength)
-    angC = asind(sensorB/wallLength)
+    wallLength = sqrt(sensorFB.^2 + sensorLR.^2);
+    angFB = asind(sensorFB/wallLength)
+    angLR = asind(sensorLR/wallLength)
 end
 
 function returnAngle = decideWhichAngle(sonarArray)
