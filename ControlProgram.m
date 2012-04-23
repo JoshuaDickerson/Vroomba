@@ -28,7 +28,7 @@ function finalRad= ControlProgram(serPort)
     while toc(tStart) < maxDuration
         sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
         %angTurned= angTurned+AngleSensorRoomba(serPort);
-        if sonarArray(1) <= 0.2
+        if sonarArray(1) <= 0.2 || sonarArray(2) <=0.1 || sonarArray(3)<=0.1
            stopBot(serPort)
            sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
            reactToWall(serPort, sonarArray);
@@ -60,7 +60,9 @@ function [stopToken] = sonarCheck(serPort, stopToken)
        stopBot(serPort)
        sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
        reactToWall(serPort, sonarArray);
-    end          
+       
+    end
+    SetFwdVelAngVelCreate(serPort,0.2,0)
     stopToken = 1;
     iterateCount = iterateCount+1;    
 end
@@ -78,6 +80,10 @@ function reactToWall(serPort, sonarArray)
     % smallestDist(1) = index of the shortest sonar beams Front or Rear
     % smallestDist(2) = index of the shortest sonar beams Right or Left 
     smallestDist(2) = find(sonarArray == min(sonarArray(2), sonarArray(3)))
+    
+    % !!! Sometimes (particularily when paralleling a wall) the front and back
+    % !!! sensors will show 3.00, indicating no wall in front or rear
+    % !!! This throws a fault --- need fix
     smallestDist(1) = find(sonarArray == min(sonarArray(1), sonarArray(4)))
 
     if sonarArray(2)>1.3 && sonarArray(3)>1.3 && sonarArray(4)>1
@@ -116,7 +122,7 @@ function reactToWall(serPort, sonarArray)
         turnAngle(serPort, 0.2, convertAngles(angleToTurn));
 
     end
-    SetFwdVelAngVelCreate(serPort,0.2,0)
+    
 end
 
 
