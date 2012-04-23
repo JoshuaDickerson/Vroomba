@@ -28,14 +28,16 @@ function finalRad= ControlProgram(serPort)
     while toc(tStart) < maxDuration 
         sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
          if any(sonarArray) < 0.03
+              stopBot(serPort)
+              disp(' !!!! Too Close !!!!');
               turnAngle(serPort, 0.2, 45);
          end
         %angTurned= angTurned+AngleSensorRoomba(serPort);
-        if length(find(sonarArray < 0.09))>=2
+        %if length(find(sonarArray < 0.09))>=2
         % if multiple sonars are too close to a wall
-        stopBot(serPort);
-        pause(30);
-        end
+        %stopBot(serPort);
+        %pause(30);
+        %end
         
         if sonarArray(1) <= 0.2 || sonarArray(2) <=0.1 || sonarArray(3)<=0.1
            stopBot(serPort)
@@ -79,10 +81,6 @@ end
 
 function stopBot(serPort)
     SetFwdVelAngVelCreate(serPort,0,0)
-    distTraveled = DistanceSensorRoomba(serPort)
-    fh = fopen('roombaLog.dat', 'a+');
-    fprintf(fh, '%0.4f\n', distTraveled);
-    fclose(fh);
 end
 
 
@@ -149,9 +147,10 @@ end
 
 
 function turnBot(serPort, angleToTurn)
+    distTraveled = DistanceSensorRoomba(serPort)
     turnAngle(serPort, 0.2, angleToTurn);
     fh = fopen('roombaLog.dat', 'a+');
-    fprintf(fh, '\t\t\t%0.4f\n', angleToTurn);
+    fprintf(fh, '%0.4f\t%0.4f\n', distTraveled, angleToTurn);
     fclose(fh);
     pause(0.1);
 end
