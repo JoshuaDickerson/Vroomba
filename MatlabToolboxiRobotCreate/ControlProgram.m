@@ -26,7 +26,7 @@ function finalRad= ControlProgram(serPort)
     stopToken = 0;
     % Enter main loop 
     while toc(tStart) < maxDuration
-        sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )]
+        sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
         %angTurned= angTurned+AngleSensorRoomba(serPort);
         if sonarArray(1) <= 0.2
            stopBot(serPort)
@@ -80,22 +80,24 @@ function reactToWall(serPort, sonarArray)
     smallestDist(2) = find(sonarArray == min(sonarArray(2), sonarArray(3)))
     smallestDist(1) = find(sonarArray == min(sonarArray(1), sonarArray(4)))
 
-    if sonarArray(2)>1 && sonarArray(3)>1 && sonarArray(4)>1
+    if sonarArray(2)>1.3 && sonarArray(3)>1.3 && sonarArray(4)>1
         % wall is just front
         turnAngle(serPort, 0.2, 90)
         
-    elseif sonarArray(2)>1 && sonarArray(3)>1 && sonarArray(1)>1
+    elseif sonarArray(2)>1.3 && sonarArray(3)>1.3 && sonarArray(1)>1
         %wall is just rear
         turnAngle(serPort, 0.2, 90)
         
     elseif smallestDist(1) == 1 &&  smallestDist(2) == 2
         % wall is front and right -- must turn ccw
+        disp(' wall is front/right -- must turn ccw')
         [angleFB angleRL wallLength] = triangWall(sonarArray(1), sonarArray(2));
-        angleToTurn = angleFB
+        angleToTurn = 90-angleFB
         turnAngle(serPort, 0.2, angleToTurn);
         
     elseif smallestDist(1) == 1 &&  smallestDist(2) == 3
         % wall is front and left - must turn clockwise
+        disp(' wall is front/left -- must turn cw')
         [angleFB angleRL wallLength] = triangWall(sonarArray(1), sonarArray(3));
         % turn CW
         angleToTurn = 180-angleFB

@@ -26,14 +26,17 @@ function finalRad= ControlProgram2(serPort)
     stopToken = 0;
     % Enter main loop 
     
+    
+    % testing turning
+    
         % test ccw 1 to 180degrees
-       %  turnAngle(serPort, 0.2, 23);
+        %       turnAngle(serPort, 0.2, 23);
         % test ccw -180 to -360degrees
-       % turnAngle(serPort, 0.2, -190);
+        %       turnAngle(serPort, 0.2, -190);
         % test cw 0 to -180degrees
-       % turnAngle(serPort, 0.2, -23);
+        %       turnAngle(serPort, 0.2, -23);
         % test cw 180 to 360degrees
-        turnAngle(serPort, 0.2, 190);
+        %       turnAngle(serPort, 0.2, 190);
         
         stopBot(serPort);
         
