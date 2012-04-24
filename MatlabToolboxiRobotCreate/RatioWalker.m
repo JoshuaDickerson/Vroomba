@@ -1,6 +1,6 @@
 function finalRad= ControlProgram(serPort)
 
-    % git@github.com:/JoshuaDickerson/Vroomba.git
+    % git@github.com:/Vroomba/Vroomba.git
 
 
     % Set constants for this program
@@ -185,8 +185,6 @@ function [angFB angLR wallLength] = triangWall(sensorFB, sensorLR)
     angFB = asind(sensorFB/wallLength)
     angLR = asind(sensorLR/wallLength)
 end
-
-
 
 
 
