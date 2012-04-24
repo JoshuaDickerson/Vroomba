@@ -38,13 +38,17 @@ function finalRad= ControlProgram(serPort)
         %stopBot(serPort);
         %pause(30);
         %end
+        maintainRat = ratioWalker(serPort);
+        if maintainRat == 1
+            disp('maintain rat');
+        end
         
         if sonarArray(1) <= 0.2 || sonarArray(2) <=0.1 || sonarArray(3)<=0.1
            stopBot(serPort)
            sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
            reactToWall(serPort, sonarArray);
         end 
-        [stopToken] = sonarCheck(serPort, stopToken);
+        [stopToken] = sonarCheck(serPort);
         pause(0.1)
     end
     
@@ -59,7 +63,28 @@ function finalRad= ControlProgram(serPort)
 end
 
 
-function [stopToken] = sonarCheck(serPort, stopToken)
+function [maintainRat] = ratioWalker(serPort)
+    sonarArrayInitial = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+    ratInitial = sonarArrayInitial(2)/sonarArrayInitial(1);
+    % walk a step and check the ratio
+    % if ratio is the same but one beam is smaller, we're at an angle to the
+    % wall
+    travelDist(serPort, 0.1, 0.1)
+    pause(0.1)
+    sonarArrayAfter = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+    ratAfter = sonarArrayAfter(2)/sonarArrayAfter(1);
+    if abs(ratInitial - ratAfter)<=0.02
+        if abs(sonarArrayInitial(2) - sonarArrayAfter(2)) >= 0.02 || abs(sonarArrayInitial(1) - sonarArrayAfter(1)) >= 0.02
+            maintainRat = 1; % means we're at an angle, headed towards wall
+        end
+    else maintainRat = 0; 
+    end
+    
+end
+
+
+
+function [stopToken] = sonarCheck(serPort)
 % sonarCheckReact takes two arguments, serPort and a stopToken and performs
 % baseline response to a wall detection
     sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
