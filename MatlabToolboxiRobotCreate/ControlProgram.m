@@ -17,7 +17,7 @@ function finalRad= ControlProgram(serPort)
     tStart= tic;        % Time limit marker
     distSansBump= 0;    % Distance traveled without hitting obstacles (m)
     angTurned= 0;       % Angle turned since turning radius increase (rad)
-    v= 0.3;               % Forward velocity (m/s)
+    v= 0.0;               % Forward velocity (m/s)
     w= 0.0;          % Angular velocity (rad/s)
     global iterateCount;
     global stopToken;
@@ -31,24 +31,25 @@ function finalRad= ControlProgram(serPort)
         else
            SetFwdVelAngVelCreate(serPort,0.0,0)
         end
-        sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+         sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
         %angTurned= angTurned+AngleSensorRoomba(serPort);
         %if length(find(sonarArray < 0.09))>=2
         % if multiple sonars are too close to a wall
         %stopBot(serPort);
         %pause(30);
         %end
-        maintainRat = ratioWalker(serPort);
-        if maintainRat == 1
-            disp('maintain rat');
-        end
+%         maintainRat = ratioWalker(serPort);
+%         if maintainRat == 1
+%             disp('maintain rat');
+%         end
         
         if sonarArray(1) <= 0.2 || sonarArray(2) <=0.1 || sonarArray(3)<=0.1
            stopBot(serPort)
            sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
            reactToWall(serPort, sonarArray);
-        end 
-        [stopToken] = sonarCheck(serPort);
+        end
+        
+%         sonarCheck(serPort);
         pause(0.1)
     end
     
@@ -63,55 +64,32 @@ function finalRad= ControlProgram(serPort)
 end
 
 
-function [maintainRat] = ratioWalker(serPort)
-    sonarArrayInitial = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
-    ratInitial = sonarArrayInitial(2)/sonarArrayInitial(1);
-    % walk a step and check the ratio
-    % if ratio is the same but one beam is smaller, we're at an angle to the
-    % wall
-    travelDist(serPort, 0.1, 0.1)
-    pause(0.1)
-    sonarArrayAfter = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
-    ratAfter = sonarArrayAfter(2)/sonarArrayAfter(1);
-    if abs(ratInitial - ratAfter)<=0.02
-        if abs(sonarArrayInitial(2) - sonarArrayAfter(2)) >= 0.02 || abs(sonarArrayInitial(1) - sonarArrayAfter(1)) >= 0.02
-            maintainRat = 1; % means we're at an angle, headed towards wall
-        end
-    else maintainRat = 0; 
-    end
-    
-end
 
 
 
-function [stopToken] = sonarCheck(serPort)
-% sonarCheckReact takes two arguments, serPort and a stopToken and performs
-% baseline response to a wall detection
-    sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
-    % iterateCount is for debugging purposes, to allow us to see the
-    % program looping
-    global iterateCount;
-    global stopToken;
+% function sonarCheck(serPort)
+% % sonarCheckReact takes two arguments, serPort and a stopToken and performs
+% % baseline response to a wall detection
+%     sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+%     % iterateCount is for debugging purposes, to allow us to see the
+%     % program looping
+%     global iterateCount;
+%     global stopToken;
+%     if any(sonarArray) < 0.08
+%        sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+%        reactToWall(serPort, sonarArray);
+%     end
+%     stopToken = 0;
+%     iterateCount = iterateCount+1;    
+% end
 
-    
-    if any(sonarArray) < 0.08
-       stopBot(serPort)
-       sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
-       reactToWall(serPort, sonarArray);
-    end
-    stopToken = 0;
-    iterateCount = iterateCount+1;    
-end
 
-function stopBot(serPort)
-    global stopToken;
-    stopToken = 1;
-    SetFwdVelAngVelCreate(serPort,0,0)
-    
-end
 
 
 function reactToWall(serPort, sonarArray)
+    global stopToken;
+    stopToken = 1;
+    stopBot(serPort)
 % reactToWall takes 2 arguments serPort, and a vector containing all sonar
 % readings
     
@@ -212,7 +190,30 @@ function [angFB angLR wallLength] = triangWall(sensorFB, sensorLR)
 end
 
 
+function [maintainRat] = ratioWalker(serPort)
+    sonarArrayInitial = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+    ratInitial = sonarArrayInitial(2)/sonarArrayInitial(1);
+    % walk a step and check the ratio
+    % if ratio is the same but one beam is smaller, we're at an angle to the
+    % wall
+    travelDist(serPort, 0.1, 0.1)
+    pause(0.1)
+    sonarArrayAfter = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+    ratAfter = sonarArrayAfter(2)/sonarArrayAfter(1);
+    if abs(ratInitial - ratAfter)<=0.02
+        if abs(sonarArrayInitial(2) - sonarArrayAfter(2)) >= 0.02 || abs(sonarArrayInitial(1) - sonarArrayAfter(1)) >= 0.02
+            maintainRat = 1; % means we're at an angle, headed towards wall
+        end
+    else maintainRat = 0; 
+    end
+    
+end
 
+function stopBot(serPort)
+    global stopToken;
+    stopToken = 1;
+    SetFwdVelAngVelCreate(serPort,0,0)
+end
 
 
 function w= v2w(v)
