@@ -28,11 +28,11 @@ function finalRad= ControlProgram(serPort)
     while toc(tStart) < maxDuration
         sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
         %angTurned= angTurned+AngleSensorRoomba(serPort);
-        if sonarArray(1) <= 0.2 || sonarArray(2) <=0.1 || sonarArray(3)<=0.1
-           stopBot(serPort)
-           sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
-           reactToWall(serPort, sonarArray);
-        end 
+%         if sonarArray(1) <= 0.2 || sonarArray(2) <=0.1 || sonarArray(3)<=0.1
+%            stopBot(serPort)
+%            sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+%            reactToWall(serPort, sonarArray);
+%         end 
         [stopToken] = sonarCheck(serPort, stopToken);
         pause(0.1)
         
@@ -57,14 +57,14 @@ disp('sonarCheck fn used');
     % iterateCount is for debugging purposes, to allow us to see the
     % program looping
     global iterateCount;    
-    if any(sonarArray) < 0.2
+    if sonarArray(1) <= 0.2 || sonarArray(2) <=0.1 || sonarArray(3)<=0.1
        stopBot(serPort)
        sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
        reactToWall(serPort, sonarArray);
-       
+    else
+        SetFwdVelAngVelCreate(serPort,0.2,0)
+        stopToken = 1;
     end
-    SetFwdVelAngVelCreate(serPort,0.2,0)
-    stopToken = 1;
     iterateCount = iterateCount+1;    
 end
 
@@ -75,25 +75,36 @@ end
 
 
 function reactToWall(serPort, sonarArray)
+disp('ReactToWall Called');
 % reactToWall takes 2 arguments serPort, and a vector containing all sonar
 % readings
-
+stopBot(serPort);
     % smallestDist(1) = index of the shortest sonar beams Front or Rear
-    % smallestDist(2) = index of the shortest sonar beams Right or Left 
-    smallestDist(2) = find(sonarArray == min(sonarArray(2), sonarArray(3)))
+    % smallestDist(2) = index of the shortest sonar beams Right or Left
     
-    % !!! Sometimes (particularily when paralleling a wall) the front and back
-    % !!! sensors will show 3.00, indicating no wall in front or rear
-    % !!! This throws a fault --- need fix
-    smallestDist(1) = find(sonarArray == min(sonarArray(1), sonarArray(4)))
+    % conditionals for ensuring smallestDist is set for all conditions
+    % Including times when neither front or back, left or right are
+    % hitting. 
+  
+    if sonarArray(2) < 3 && sonarArray(3) <3
+          smallestDist(2) = find(sonarArray == min(sonarArray(2), sonarArray(3)));
+    else
+        smallestDist(2) = 2;
+    end
 
+    if sonarArray(1) < 3 && sonarArray(4) <3
+        smallestDist(1) = find(sonarArray == min(sonarArray(1), sonarArray(4)))
+    else
+        smallestDist(1) = 1;
+    end
+    
     if sonarArray(2)>1.3 && sonarArray(3)>1.3 && sonarArray(4)>1
         % wall is just front
         turnAngle(serPort, 0.2, 90)
         
-    elseif sonarArray(2)>1.3 && sonarArray(3)>1.3 && sonarArray(1)>1
-        %wall is just rear
-        turnAngle(serPort, 0.2, 90)
+%     elseif sonarArray(2)>1.3 && sonarArray(3)>1.3 && sonarArray(1)>1
+%         %wall is just rear
+%         turnAngle(serPort, 0.2, 90)
         
     elseif smallestDist(1) == 1 &&  smallestDist(2) == 2
         % wall is front and right -- must turn ccw
@@ -112,18 +123,20 @@ function reactToWall(serPort, sonarArray)
         
     elseif smallestDist(1) == 4 &&  smallestDist(2) == 2
         % wall is rear and right
-        [angleFB angleRL wallLength] = triangWall(sonarArray(4), sonarArray(2));
-        angleToTurn = 180-angleFB
-        turnAngle(serPort, 0.2, convertAngles(angleToTurn));
+%         [angleFB angleRL wallLength] = triangWall(sonarArray(4), sonarArray(2));
+%         angleToTurn = 180-angleFB
+%         turnAngle(serPort, 0.2, convertAngles(angleToTurn));
+          travelDist(serPort, 0.3, 0.3) 
         
     elseif smallestDist(1) == 4 &&  smallestDist(2) == 3
         % wall is rear and left
-        [angleFB angleRL wallLength] = triangWall(sonarArray(4), sonarArray(2));
-        angleToTurn = 180-angleFB
-        turnAngle(serPort, 0.2, convertAngles(angleToTurn));
+%         [angleFB angleRL wallLength] = triangWall(sonarArray(4), sonarArray(2));
+%         angleToTurn = 180-angleFB
+%         turnAngle(serPort, 0.2, convertAngles(angleToTurn));
+          travelDist(serPort, 0.3, 0.3)  
 
     end
-    
+    pause(0.1);
 end
 
 
