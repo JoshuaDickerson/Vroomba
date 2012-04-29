@@ -14,18 +14,18 @@ function varargout = SimulatorGUI(varargin)
 
 % Edit the above text to modify the response to help SimulatorGUI
 
-% Last Modified by GUIDE v2.5 19-Apr-2012 11:32:55
+% Last Modified by GUIDE v2.5 24-Apr-2012 13:11:17
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
-    'gui_Singleton',  gui_Singleton, ...
-    'gui_OpeningFcn', @SimulatorGUI_OpeningFcn, ...
-    'gui_OutputFcn',  @SimulatorGUI_OutputFcn, ...
-    'gui_LayoutFcn',  [], ...
-    'gui_Callback',   []);
+                   'gui_Singleton',  gui_Singleton, ...
+                   'gui_OpeningFcn', @SimulatorGUI_OpeningFcn, ...
+                   'gui_OutputFcn',  @SimulatorGUI_OutputFcn, ...
+                   'gui_LayoutFcn',  [], ...
+                   'gui_Callback',   []);
 if nargin && ischar(varargin{1})
-    gui_State.gui_Callback = str2func(varargin{1});
+   gui_State.gui_Callback = str2func(varargin{1});
 end
 
 if nargout
@@ -712,26 +712,6 @@ if fileName
             rethrow(me)     % Allow error to propagate to command window
         end
     end
-    
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % hObject    handle to push_sensors (see GCBO)
-    % eventdata  reserved - to be defined in a future version of MATLAB
-    % handles    structure with handles and user data (see GUIDATA)
-    
-    % Get robot object to query sensors and output to command window
-    obj= get(handles.text_title,'UserData');
-    [rad rIR rSon rLid angRLid numPtsLid]= getConstants(obj);
-    % Sonar sensors
-    figure;
-    distSonar= genSonar(obj);
-    fprintf('Sonar Sensors:\n')
-    fprintf('\tFront: %.3f m\n',distSonar(1))
-    fprintf('\tLeft: %.3f m\n',distSonar(2))
-    fprintf('\tRear: %.3f m\n',distSonar(3))
-    fprintf('\tRight: %.3f m\n\n',distSonar(4))
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    
 end
 
 
@@ -766,53 +746,19 @@ set(handles.push_stop,'Enable','on')
 set(handles.push_auto_start,'Enable','on')
 
 
-% --- Executes on button press in MAAAP.
-function MAAAP_Callback(hObject, eventdata, handles)
-% hObject    handle to MAAAP (see GCBO)
+% --- Executes on button press in MapBox.
+function MapBox_Callback(hObject, eventdata, handles)
+% hObject    handle to MapBox (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% hObject    handle to push_sensors (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Get robot object to query sensors and output to command window
 
-% Get robot object to query sensors and output to command window
+% Hint: get(hObject,'Value') returns toggle state of MapBox
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if get(handles.MapBox,'Value')%Checks to see if the Check Box for Mapping is 
+    
+    % Get robot object to query sensors and output to command window
 obj= get(handles.text_title,'UserData');
 [rad rIR rSon rLid angRLid numPtsLid]= getConstants(obj);
-
-% Bump sensors
-bump= genBump(obj);
-bumpR= bump(1);
-bumpF= bump(2);
-bumpL= bump(3);
-fprintf('Bump Sensors:\n')
-fprintf('\tRight: %.0f\n',bumpR)
-fprintf('\tFront: %.0f\n',bumpF)
-fprintf('\tLeft: %.0f\n\n',bumpL)
-
-% Cliff sensors
-cliffR= 0;
-cliffFR= 0;
-cliffFL= 0;
-cliffL= 0;
-cliff= genCliff(obj);
-cliffRstr= cliff(1);
-cliffFRstr= cliff(2);
-cliffFLstr= cliff(3);
-cliffLstr= cliff(4);
-fprintf('Cliff Sensors:\n')
-fprintf('\tRight: State %.0f Strength %%%.3f\n',cliffR,cliffRstr)
-fprintf('\tFront-Right: State %.0f Strength %%%.3f\n',cliffFR,cliffFRstr)
-fprintf('\tFront-Left: State %.0f Strength %%%.3f\n',cliffFL,cliffFLstr)
-fprintf('\tLeft: State %.0f Strength %%%.3f\n\n',cliffL,cliffLstr)
-
-% Infrared wall sensor
-wall= genIR(obj);
-fprintf('Wall Sensor: %.0f\n\n',wall)
-
-% Virtual Wall sensor
-vwall= genVWall(obj);
-fprintf('Virtual Wall Sensor: %.0f\n\n',vwall)
 
 % Sonar sensors
 distSonar= genSonar(obj);
@@ -863,8 +809,4 @@ for i= 1:length(angCam)
         colorCam(i,3))
 end
 fprintf('\n')
-
-
-
-
-
+end
