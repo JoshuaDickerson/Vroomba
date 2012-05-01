@@ -26,10 +26,10 @@ function SLAM
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % The number of timesteps for the simulation
-timesteps = 100;
+timesteps = 200;
 
 % The maximum distance from which our sensor can sense a landmark
-max_read_distance = 200;
+max_read_distance = 10;
 
 % The actual positions of the landmarks (each column is a separate landmark)
 real_landmarks = [1.0,  2.0,  0.0, 0.0, 1.0;     % x 

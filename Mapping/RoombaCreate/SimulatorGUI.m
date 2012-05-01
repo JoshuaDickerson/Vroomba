@@ -754,59 +754,11 @@ function MapBox_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of MapBox
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if get(handles.MapBox,'Value')%Checks to see if the Check Box for Mapping is 
-    
-    % Get robot object to query sensors and output to command window
-obj= get(handles.text_title,'UserData');
-[rad rIR rSon rLid angRLid numPtsLid]= getConstants(obj);
+x_pos = 0;
+y_pos = 0;
+figure  
+plot(x_pos, y_pos)
+while get(handles.MapBox, 'Value')
 
-% Sonar sensors
-distSonar= genSonar(obj);
-fprintf('Sonar Sensors:\n')
-fprintf('\tFront: %.3f m\n',distSonar(1))
-fprintf('\tLeft: %.3f m\n',distSonar(2))
-fprintf('\tRear: %.3f m\n',distSonar(3))
-fprintf('\tRight: %.3f m\n\n',distSonar(4))
 
-% LIDAR sensor
-handleGUI= gcf;     % Get GUI figure handle to switch back to
-distLidar= genLidar(obj);
-angleData= linspace(pi/2-angRLid/2,pi/2+angRLid/2,numPtsLid);
-figure
-hold on
-polar(linspace(0,2*pi,11),rad*ones(1,11),'b-')
-polar([0 pi/2],[0 1.5*rad],'b-')
-polar([angleData(1) 0 angleData(end)],[distLidar(1) 0 distLidar(end)],'k-')
-polar(angleData,distLidar,'k.')
-axis([-10 10 -10 10])
-title('LIDAR Data')
-xlabel('Distance (m)')
-ylabel('Distance (m)')
-hold off
-figure(handleGUI)   % Switch back to GUI figure
-fprintf('LIDAR Sensor: see figure\n\n')
-
-% Odometry
-distOdom= genOdomDist(obj);
-angOdom= genOdomAng(obj);
-fprintf('Odometry Data (since last call):\n')
-fprintf('\tDistance: %.3f m\n',distOdom)
-fprintf('\tAngle: %.3f m\n\n',angOdom)
-
-% Overhead localization system
-[x y th]= genOverhead(obj);
-fprintf('Overhead Localization System output:\n')
-fprintf('\tX-Coordinate: %.3f m\n',x)
-fprintf('\tY-Coordinate: %.3f m\n',y)
-fprintf('\tAngle relative to horizontal: %.3f rad\n\n',th)
-
-% Camera
-[angCam distCam colorCam]= genCamera(obj);
-fprintf('Camera Data:\n')
-for i= 1:length(angCam)
-    fprintf('Beacon at %.0f deg, %.3f m, with color [%.2f %.2f %.2f]\n',...
-        rad2deg(angCam(i)),distCam(i),colorCam(i,1),colorCam(i,2),...
-        colorCam(i,3))
-end
-fprintf('\n')
 end
