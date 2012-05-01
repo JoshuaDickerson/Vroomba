@@ -26,24 +26,24 @@ function SLAM
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % The number of timesteps for the simulation
-timesteps = 200;
+timesteps = 100;
 
 % The maximum distance from which our sensor can sense a landmark
-max_read_distance = 1.5;
+max_read_distance = 200;
 
 % The actual positions of the landmarks (each column is a separate landmark)
-real_landmarks = [1.0,  2.0,  0.0, 0.0, 1.0;     % x
+real_landmarks = [1.0,  2.0,  0.0, 0.0, 1.0;     % x 
     3.0,  2.5   3.4, 1.5, 3.5;     % y
     0.0,  0.0   0.0, 0.0, 0.0];    % Nothing
 
 % The initial starting position of the robot
-real_position = [0.0;      % x
-    -1.0;     % y
-    pi/3.0];  % rotation
+real_position = [-3.0;      % x
+    -3.0;     % y
+    pi/4.0];  % rotation
 
-% The movement command given tot he robot at each timestep
+% The movement command given to the robot at each timestep
 movement_command = [.05;     % Distance
-    .01];    % Rotation
+                    0.01];    % Rotation
 
 % The Gaussian variance of the movement commands
 movement_variance = [.1;   % Distance
