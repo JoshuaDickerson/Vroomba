@@ -22,11 +22,13 @@ function finalRad= ControlProgram(serPort)
     w= 0.0;          % Angular velocity (rad/s)
     global iterateCount;
     global stopToken;
+    global zeroDistCount;
+    zeroDistCount = 0;
     iterateCount = 0;
     % Start robot moving
     stopToken = 0;
     % Enter main loop 
-    while toc(tStart) < maxDuration
+    while toc(tStart) < maxDuration.*1000;
         if stopToken == 0
             SetFwdVelAngVelCreate(serPort,0.3,0) 
         else
@@ -89,8 +91,14 @@ end
 
 function reactToWall(serPort, sonarArray)
     global stopToken;
+    global zeroDistCount;
     stopToken = 1;
     stopBot(serPort)
+    
+    if zeroDistCount == 3
+        botConfused(serPort);
+    end
+   
 % reactToWall takes 2 arguments serPort, and a vector containing all sonar
 % readings
     
@@ -106,53 +114,60 @@ function reactToWall(serPort, sonarArray)
     if sonarArray(1) == 3.00 && sonarArray(4) == 3.00
         % neither front or rear beams making contact
         % Bot parallel to a wall
+        % just keep walking
+        stopToken = 0;
     else
         smallestDist(1) = find(sonarArray == min(sonarArray(1), sonarArray(4)))
-    end
-    
-    
-    if sonarArray(2)>1.3 && sonarArray(3)>1.3 && sonarArray(4)>1
-        % wall is just front
-        turnBot(serPort, 90)
-        
-    elseif sonarArray(2)>1.3 && sonarArray(3)>1.3 && sonarArray(1)>1
-        %wall is just rear
-        turnBot(serPort, convertAngles(90))
-        
-    elseif smallestDist(1) == 1 &&  smallestDist(2) == 2
-        % wall is front and right -- must turn ccw
-        disp(' wall is front/right -- must turn ccw')
-        [angleFB angleRL wallLength] = triangWall(sonarArray(1), sonarArray(2));
-        angleToTurn = 90-angleFB
-        turnBot(serPort, angleToTurn)
-    elseif smallestDist(1) == 1 &&  smallestDist(2) == 3
-        % wall is front and left - must turn clockwise
-        disp(' wall is front/left -- must turn cw')
-        [angleFB angleRL wallLength] = triangWall(sonarArray(1), sonarArray(3));
-        % turn CW
-        angleToTurn = angleFB
-        turnBot(serPort, convertAngles(angleToTurn))
-    elseif smallestDist(1) == 4 &&  smallestDist(2) == 2
-       % wall is rear and right
-       [angleFB angleRL wallLength] = triangWall(sonarArray(4), sonarArray(2));
-       angleToTurn = 180-angleFB
-       turnBot(serPort, angleToTurn);
-       
-    elseif smallestDist(1) == 4 &&  smallestDist(2) == 3
-       % wall is rear and left
-       [angleFB angleRL wallLength] = triangWall(sonarArray(4), sonarArray(2));
-       angleToTurn = 180-angleFB
-       turnBot(serPort, convertAngles(angleToTurn));  
-    end
-    stopToken = 0;
+        if sonarArray(2)>1.3 && sonarArray(3)>1.3 && sonarArray(4)>1
+            % wall is just front
+            turnBot(serPort, 90)
+            stopToken = 0;
+        elseif sonarArray(2)>1.3 && sonarArray(3)>1.3 && sonarArray(1)>1
+            %wall is just rear
+            turnBot(serPort, convertAngles(90))
+            stopToken = 0;
+        elseif smallestDist(1) == 1 &&  smallestDist(2) == 2
+            % wall is front and right -- must turn ccw
+            disp(' wall is front/right -- must turn ccw')
+            [angleFB angleRL wallLength] = triangWall(sonarArray(1), sonarArray(2));
+            angleToTurn = 90-angleFB
+            turnBot(serPort, angleToTurn)
+            stopToken = 0;
+        elseif smallestDist(1) == 1 &&  smallestDist(2) == 3
+            % wall is front and left - must turn clockwise
+            disp(' wall is front/left -- must turn cw')
+            [angleFB angleRL wallLength] = triangWall(sonarArray(1), sonarArray(3));
+            % turn CW
+            angleToTurn = angleFB
+            turnBot(serPort, convertAngles(angleToTurn))
+            stopToken = 0;
+        elseif smallestDist(1) == 4 &&  smallestDist(2) == 2
+           % wall is rear and right
+           [angleFB angleRL wallLength] = triangWall(sonarArray(4), sonarArray(2));
+           angleToTurn = 180-angleFB
+           turnBot(serPort, angleToTurn);
+           stopToken = 0;
+        elseif smallestDist(1) == 4 &&  smallestDist(2) == 3
+           % wall is rear and left
+           [angleFB angleRL wallLength] = triangWall(sonarArray(4), sonarArray(2));
+           angleToTurn = 180-angleFB
+           turnBot(serPort, convertAngles(angleToTurn));
+           stopToken = 0;
+        end
+     end
     
 end
 
 
 function turnBot(serPort, angleToTurn)
     global tStart;
-    global lastDist;
+    global zeroDistCount;
     distTraveled = DistanceSensorRoomba(serPort)
+    if distTraveled == 0
+        zeroDistCount = zeroDistCount + 1;
+    else
+        zeroDistCount = 0;
+    end
     turnAngle(serPort, 0.2, angleToTurn);
     fh = fopen('roombaLog.dat', 'a+');
     fprintf(fh, '%0.4f\t%0.4f\t%0.4f\n', toc(tStart), distTraveled, angleToTurn);
@@ -164,7 +179,7 @@ function angle = convertAngles(angle)
         angle = (-1).*angle
 end
 
-% 
+
  function botConfused(serPort)
  disp('botConfused -------------------')
  sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
