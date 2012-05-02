@@ -1,6 +1,6 @@
 function finalRad= ControlProgram(serPort)
 
-    % git@github.com:/Vroomba/Vroomba.git
+    % git@github.com:/JoshuaDickerson/Vroomba.git
 
 
     % Set constants for this program
@@ -14,28 +14,44 @@ function finalRad= ControlProgram(serPort)
     
     
     % Initialize loop variables
+    global tStart;
     tStart= tic;        % Time limit marker
     distSansBump= 0;    % Distance traveled without hitting obstacles (m)
     angTurned= 0;       % Angle turned since turning radius increase (rad)
-    v= 0.3;               % Forward velocity (m/s)
+    v= 0.0;               % Forward velocity (m/s)
     w= 0.0;          % Angular velocity (rad/s)
     global iterateCount;
+    global stopToken;
     iterateCount = 0;
     % Start robot moving
-    SetFwdVelAngVelCreate(serPort,v,w)
     stopToken = 0;
     % Enter main loop 
     while toc(tStart) < maxDuration
-        sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+        if stopToken == 0
+            SetFwdVelAngVelCreate(serPort,0.3,0) 
+        else
+           SetFwdVelAngVelCreate(serPort,0.0,0)
+        end
+         sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
         %angTurned= angTurned+AngleSensorRoomba(serPort);
-%         if sonarArray(1) <= 0.2 || sonarArray(2) <=0.1 || sonarArray(3)<=0.1
-%            stopBot(serPort)
-%            sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
-%            reactToWall(serPort, sonarArray);
-%         end 
-        [stopToken] = sonarCheck(serPort, stopToken);
-        pause(0.1)
+        %if length(find(sonarArray < 0.09))>=2
+        % if multiple sonars are too close to a wall
+        %stopBot(serPort);
+        %pause(30);
+        %end
+%         maintainRat = ratioWalker(serPort);
+%         if maintainRat == 1
+%             disp('maintain rat');
+%         end
         
+        if sonarArray(1) <= 0.2 || sonarArray(2) <=0.1 || sonarArray(3)<=0.1
+           stopBot(serPort)
+           sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+           reactToWall(serPort, sonarArray);
+        end
+        
+%         sonarCheck(serPort);
+        pause(0.1)
     end
     
     % Specify output parameter
@@ -49,117 +65,124 @@ function finalRad= ControlProgram(serPort)
 end
 
 
-function [stopToken] = sonarCheck(serPort, stopToken)
-disp('sonarCheck fn used');
-% sonarCheckReact takes two arguments, serPort and a stopToken and performs
-% baseline response to a wall detection
-    sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
-    % iterateCount is for debugging purposes, to allow us to see the
-    % program looping
-    global iterateCount;    
-    if sonarArray(1) <= 0.2 || sonarArray(2) <=0.1 || sonarArray(3)<=0.1
-       stopBot(serPort)
-       sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
-       reactToWall(serPort, sonarArray);
-    else
-        SetFwdVelAngVelCreate(serPort,0.2,0)
-        stopToken = 1;
-    end
-    iterateCount = iterateCount+1;    
-end
 
-function stopBot(serPort)
-SetFwdVelAngVelCreate(serPort,0,0)
-distTraveled = DistanceSensorRoomba(serPort)
-end
+
+
+% function sonarCheck(serPort)
+% % sonarCheckReact takes two arguments, serPort and a stopToken and performs
+% % baseline response to a wall detection
+%     sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+%     % iterateCount is for debugging purposes, to allow us to see the
+%     % program looping
+%     global iterateCount;
+%     global stopToken;
+%     if any(sonarArray) < 0.08
+%        sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+%        reactToWall(serPort, sonarArray);
+%     end
+%     stopToken = 0;
+%     iterateCount = iterateCount+1;    
+% end
+
+
 
 
 function reactToWall(serPort, sonarArray)
-disp('ReactToWall Called');
+    global stopToken;
+    stopToken = 1;
+    stopBot(serPort)
 % reactToWall takes 2 arguments serPort, and a vector containing all sonar
 % readings
-stopBot(serPort);
+    
     % smallestDist(1) = index of the shortest sonar beams Front or Rear
     % smallestDist(2) = index of the shortest sonar beams Right or Left
+    if sonarArray(2) == 3.00 && sonarArray(3) == 3.00
+        % neither left or right beams making contact
+        % Bot perpendicular to a wall
+    else 
+        smallestDist(2) = find(sonarArray == min(sonarArray(2), sonarArray(3)))
+    end
     
-    % conditionals for ensuring smallestDist is set for all conditions
-    % Including times when neither front or back, left or right are
-    % hitting. 
-  
-    if sonarArray(2) < 3 && sonarArray(3) <3
-          smallestDist(2) = find(sonarArray == min(sonarArray(2), sonarArray(3)));
+    if sonarArray(1) == 3.00 && sonarArray(4) == 3.00
+        % neither front or rear beams making contact
+        % Bot parallel to a wall
     else
-        smallestDist(2) = 2;
-    end
-
-    if sonarArray(1) < 3 && sonarArray(4) <3
         smallestDist(1) = find(sonarArray == min(sonarArray(1), sonarArray(4)))
-    else
-        smallestDist(1) = 1;
     end
+    
     
     if sonarArray(2)>1.3 && sonarArray(3)>1.3 && sonarArray(4)>1
         % wall is just front
-        turnAngle(serPort, 0.2, 90)
+        turnBot(serPort, 90)
         
-%     elseif sonarArray(2)>1.3 && sonarArray(3)>1.3 && sonarArray(1)>1
-%         %wall is just rear
-%         turnAngle(serPort, 0.2, 90)
+    elseif sonarArray(2)>1.3 && sonarArray(3)>1.3 && sonarArray(1)>1
+        %wall is just rear
+        turnBot(serPort, convertAngles(90))
         
     elseif smallestDist(1) == 1 &&  smallestDist(2) == 2
         % wall is front and right -- must turn ccw
         disp(' wall is front/right -- must turn ccw')
         [angleFB angleRL wallLength] = triangWall(sonarArray(1), sonarArray(2));
         angleToTurn = 90-angleFB
-        turnAngle(serPort, 0.2, angleToTurn);
-        
+        turnBot(serPort, angleToTurn)
     elseif smallestDist(1) == 1 &&  smallestDist(2) == 3
         % wall is front and left - must turn clockwise
         disp(' wall is front/left -- must turn cw')
         [angleFB angleRL wallLength] = triangWall(sonarArray(1), sonarArray(3));
         % turn CW
         angleToTurn = angleFB
-        turnAngle(serPort, 0.2, convertAngles(angleToTurn));
-        
+        turnBot(serPort, convertAngles(angleToTurn))
     elseif smallestDist(1) == 4 &&  smallestDist(2) == 2
-        % wall is rear and right
-%         [angleFB angleRL wallLength] = triangWall(sonarArray(4), sonarArray(2));
-%         angleToTurn = 180-angleFB
-%         turnAngle(serPort, 0.2, convertAngles(angleToTurn));
-          travelDist(serPort, 0.3, 0.3) 
-        
+       % wall is rear and right
+       [angleFB angleRL wallLength] = triangWall(sonarArray(4), sonarArray(2));
+       angleToTurn = 180-angleFB
+       turnBot(serPort, angleToTurn);
+       
     elseif smallestDist(1) == 4 &&  smallestDist(2) == 3
-        % wall is rear and left
-%         [angleFB angleRL wallLength] = triangWall(sonarArray(4), sonarArray(2));
-%         angleToTurn = 180-angleFB
-%         turnAngle(serPort, 0.2, convertAngles(angleToTurn));
-          travelDist(serPort, 0.3, 0.3)  
-
+       % wall is rear and left
+       [angleFB angleRL wallLength] = triangWall(sonarArray(4), sonarArray(2));
+       angleToTurn = 180-angleFB
+       turnBot(serPort, convertAngles(angleToTurn));  
     end
-    pause(0.1);
+    stopToken = 0;
+    
 end
 
+
+function turnBot(serPort, angleToTurn)
+    global tStart;
+    global lastDist;
+    distTraveled = DistanceSensorRoomba(serPort)
+    turnAngle(serPort, 0.2, angleToTurn);
+    fh = fopen('roombaLog.dat', 'a+');
+    fprintf(fh, '%0.4f\t%0.4f\t%0.4f\n', toc(tStart), distTraveled, angleToTurn);
+    fclose(fh);
+    pause(0.1);
+end
 
 function angle = convertAngles(angle)
         angle = (-1).*angle
 end
 
-
-function botConfused(serPort)
-sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
-if sonarArray(1) < 2
-   while sonarArray(1)<2 
-    SetFwdVelAngVelCreate(serPort,0.5,0)
-    sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
-   end
-elseif sonarArray(4) < 2
-   while sonarArray(4)<2 
-    SetFwdVelAngVelCreate(serPort,-0.5,0)
-    sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
-   end
-end
-    
-end
+% 
+ function botConfused(serPort)
+ disp('botConfused -------------------')
+ sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+ largestDist = find(sonarArray == max(sonarArray)) 
+     if largestDist == 4
+        turnBot(serPort, 180);
+        travelDist(serPort, 0.2, sonarArray(4).*0.20)
+     elseif largestDist == 3
+        turnBot(serPort, 90);
+        travelDist(serPort, 0.2, sonarArray(3).*0.20)
+     elseif largestDist == 2
+        turnBot(serPort, -90);
+        travelDist(serPort, 0.2, sonarArray(2).*0.20)
+     else
+        travelDist(serPort, 0.2, sonarArray(1).*0.20)
+     end
+     
+ end
 
 function [angFB angLR wallLength] = triangWall(sensorFB, sensorLR)
 %triangWall uses two sonar senors, which are placed 90deg apart, to deduce
@@ -169,17 +192,30 @@ function [angFB angLR wallLength] = triangWall(sensorFB, sensorLR)
     angLR = asind(sensorLR/wallLength)
 end
 
-function returnAngle = decideWhichAngle(sonarArray)
-    smallestDist = find(sonarArray == min(sonarArray));
-    hotSensors = find(sonarArray < 3);
-    counter = length(hotSensors);
-    for ii=1:counter
-        hotSensors(ii) = sonarArray(hotSensors(ii));
-    end
-    %returnAngle = hotSensors;
-    [triangulated(1) triangulated(2) triangulated(3)] = triangWall(hotSensors(1), hotSensors(2));
-    returnAngle = [triangulated(2) triangulated(3)];
 
+function [maintainRat] = ratioWalker(serPort)
+    sonarArrayInitial = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+    ratInitial = sonarArrayInitial(2)/sonarArrayInitial(1);
+    % walk a step and check the ratio
+    % if ratio is the same but one beam is smaller, we're at an angle to the
+    % wall
+    travelDist(serPort, 0.1, 0.1)
+    pause(0.1)
+    sonarArrayAfter = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+    ratAfter = sonarArrayAfter(2)/sonarArrayAfter(1);
+    if abs(ratInitial - ratAfter)<=0.02
+        if abs(sonarArrayInitial(2) - sonarArrayAfter(2)) >= 0.02 || abs(sonarArrayInitial(1) - sonarArrayAfter(1)) >= 0.02
+            maintainRat = 1; % means we're at an angle, headed towards wall
+        end
+    else maintainRat = 0; 
+    end
+    
+end
+
+function stopBot(serPort)
+    global stopToken;
+    stopToken = 1;
+    SetFwdVelAngVelCreate(serPort,0,0)
 end
 
 
