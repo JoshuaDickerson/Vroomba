@@ -19,13 +19,13 @@ function varargout = SimulatorGUI(varargin)
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
-                   'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @SimulatorGUI_OpeningFcn, ...
-                   'gui_OutputFcn',  @SimulatorGUI_OutputFcn, ...
-                   'gui_LayoutFcn',  [], ...
-                   'gui_Callback',   []);
+    'gui_Singleton',  gui_Singleton, ...
+    'gui_OpeningFcn', @SimulatorGUI_OpeningFcn, ...
+    'gui_OutputFcn',  @SimulatorGUI_OutputFcn, ...
+    'gui_LayoutFcn',  [], ...
+    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
-   gui_State.gui_Callback = str2func(varargin{1});
+    gui_State.gui_Callback = str2func(varargin{1});
 end
 
 if nargout
@@ -754,11 +754,22 @@ function MapBox_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of MapBox
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-x_pos = 0;
-y_pos = 0;
-figure  
-plot(x_pos, y_pos)
+
 while get(handles.MapBox, 'Value')
-
-
+    rLog = load('roombaLog.dat');
+    radius = rLog(:,2);
+    the_ta = rLog(:,3);
+    mapp = zeros();
+    
+    for ii = 1:length(radius)
+        r = radius(ii);
+        t = the_ta(ii);
+        x = r * cos(t);
+        y = r * sin(t);
+        mapp(ii,1) = x;
+        mapp(ii,2) = y;
+        %[x, y] = track(x, y);
+        
+    end
+    
 end
