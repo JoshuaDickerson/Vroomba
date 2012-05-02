@@ -1,4 +1,4 @@
-function finalRad= ControlProgram(serPort)
+function finalRad= ControlProgramGood(serPort)
 
     % git@github.com:/JoshuaDickerson/Vroomba.git
 
