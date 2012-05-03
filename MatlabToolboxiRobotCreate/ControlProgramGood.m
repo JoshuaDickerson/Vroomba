@@ -5,19 +5,10 @@ function finalRad= ControlProgram(serPort)
 
     % Set constants for this program
     maxDuration= 999;  % Max time to allow the program to run (s)
-    maxDistSansBump= 999; % Max distance to travel without obstacles (m)
-    maxFwdVel= 0.5;     % Max allowable forward velocity with no angular 
-                        % velocity at the time (m/s)
-    maxVelIncr= 0.005;  % Max incrementation of forward velocity (m/s)
-    maxOdomAng= pi/4;   % Max angle to move around a circle before 
-                        % increasing the turning radius (rad)
-    
     
     % Initialize loop variables
     global tStart;
     tStart= tic;        % Time limit marker
-    distSansBump= 0;    % Distance traveled without hitting obstacles (m)
-    angTurned= 0;       % Angle turned since turning radius increase (rad)
     v= 0.0;               % Forward velocity (m/s)
     w= 0.0;          % Angular velocity (rad/s)
     global iterateCount;
@@ -25,7 +16,7 @@ function finalRad= ControlProgram(serPort)
     global zeroDistCount;
     global debug;
     % debug=1 is in debug mode, not in debug == 0
-    debug = 1;
+    debug = 0;
     zeroDistCount = 0;
     iterateCount = 0;
     
@@ -41,8 +32,26 @@ function finalRad= ControlProgram(serPort)
         else
            SetFwdVelAngVelCreate(serPort,0.0,0);
         end
-         sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];        
         
+        [BumpRight,BumpLeft,WheDropRight,WheDropLeft,WheDropCaster,BumpFront] = BumpsWheelDropsSensorsRoomba(serPort);
+        Bumped = [BumpRight BumpLeft BumpFront];
+        if any(Bumped)==1
+            stopToken = 1;
+            if debug == 1
+                disp('BUMPED ENVOKED #######')
+            end
+            stopBot(serPort);
+            walkBack(serPort);
+            pause(0.1)
+            stopBot(serPort)
+            turnBot(serPort, 45)
+            stopToken = 0;
+        end
+
+            
+        
+         sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
+         
          if any(sonarArray <lrTolerance)
              stopBot(serPort);
              reactToWall(serPort, sonarArray);
@@ -197,6 +206,32 @@ end
     if stopToken == 0;
         travelDist(serPort, 0.2, distance);
     end
+if debug ==1
+    disp('walkFwd COMPLETE')
+end
+end
+
+function walkBack(serPort, distance)
+global debug;
+global stopToken;
+global tStart;
+if debug ==1
+    disp('walkBack envoked')
+end
+
+    if stopToken == 0;
+        SetDriveWheelsCreate(serPort,-0.2,-0.2)
+        pause(0.1)
+        stopBot(serPort);
+    end
+    distTraveled = (-1).*DistanceSensorRoomba(serPort);
+    angleToTurn = 0;
+    fh = fopen('roombaLog.dat', 'a+');
+    fprintf(fh, '%0.4f\t%0.4f\t%0.4f\n', toc(tStart), distTraveled, angleToTurn);
+    fclose(fh);
+    pause(0.1);
+    
+    
 if debug ==1
     disp('walkFwd COMPLETE')
 end
