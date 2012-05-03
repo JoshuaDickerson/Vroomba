@@ -6,15 +6,13 @@ function finalRad= ControlProgram(serPort)
     % Set constants for this program
     maxDuration= 999;  % Max time to allow the program to run (s)
     
-    % Initialize loop variables
+    % Initialize config variables
     global tStart;
-    tStart= tic;        % Time limit marker
-    v= 0.0;               % Forward velocity (m/s)
-    w= 0.0;          % Angular velocity (rad/s)
-    global iterateCount;
-    global stopToken;
-    global zeroDistCount;
-    global debug;
+    tStart= tic;            % Time limit marker
+    global iterateCount;    % counts the iteration of a function (debug only)
+    global stopToken;       % token passed between functions, to prevent bot from moving
+    global zeroDistCount;   % iterates if bot is turning but not moving fwd
+    global debug;           % global debug variablw
     % debug=1 is in debug mode, not in debug == 0
     debug = 0;
     zeroDistCount = 0;
@@ -25,21 +23,29 @@ function finalRad= ControlProgram(serPort)
     lrTolerance = 0.3;
     % Start robot moving
     stopToken = 0;
+    
     % Enter main loop 
     while toc(tStart) < maxDuration.*1000;
+        % stopToken prevents/allows movement 
         if stopToken == 0
             SetFwdVelAngVelCreate(serPort,0.3,0); 
         else
            SetFwdVelAngVelCreate(serPort,0.0,0);
         end
         
+        % Bump sensors respond too slowly to be effective. This is a
+        % condition for them anyways
         [BumpRight,BumpLeft,WheDropRight,WheDropLeft,WheDropCaster,BumpFront] = BumpsWheelDropsSensorsRoomba(serPort);
         Bumped = [BumpRight BumpLeft BumpFront];
         if any(Bumped)==1
             stopToken = 1;
+            
+            % debug line --------------------
             if debug == 1
                 disp('BUMPED ENVOKED #######')
             end
+           
+            
             stopBot(serPort);
             walkBack(serPort);
             pause(0.1)
@@ -49,9 +55,12 @@ function finalRad= ControlProgram(serPort)
         end
 
             
-        
+         % sonarArray actively gathers sonar data while bot moves   
          sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
          
+         % if any sonar sensor reads below the LR tolerances set in the config
+         % block, reactToWall() in envoked. This condition is used when the
+         % front beam is long, but the side beams are short
          if any(sonarArray <lrTolerance)
              stopBot(serPort);
              reactToWall(serPort, sonarArray);
@@ -78,10 +87,11 @@ function reactToWall(serPort, sonarArray)
     global zeroDistCount;
     global debug;
     
+    % debug line --------------------
     if debug==1
         disp('reactToWall envoked')
     end
-    smallestDist = [3 3 3 3];
+   
     % stopToken = 1; prevents bot from moving
     stopToken = 1;
     stopBot(serPort)
@@ -105,9 +115,12 @@ function reactToWall(serPort, sonarArray)
 
 
         try
+            % if front and rear beams are not making contact
             if sonarArray(1) == 3.00 && sonarArray(4) == 3.00
+                % if and beams are shorter than 0.3m, find the smallestDist
                 if any(sonarArray <0.3)
                    smallestDist(1) = find(sonarArray == min(sonarArray));
+                   % turn accordingly
                    if smallestDist(1) == 2
                        turnBot(serPort, 45)
                    elseif smallestDist(1) == 3
@@ -121,6 +134,7 @@ function reactToWall(serPort, sonarArray)
                     smallestDist(1) = find(sonarArray == min(sonarArray));
                 end
             else
+                % find the shortest beam front/back
                 smallestDist(1) = find(sonarArray == min(sonarArray(1), sonarArray(4)));
 
                 if sonarArray(2)>0.6 && sonarArray(3)>0.6 && sonarArray(4)>0.6
@@ -156,10 +170,6 @@ function reactToWall(serPort, sonarArray)
                       walkFwd(serPort, 0.1);
                       SetFwdVelAngVelCreate(serPort,0.3,0);
                    else
-                       % wall is rear and right
-                       %[angleFB angleRL wallLength] = triangWall(sonarArray(4), sonarArray(2));
-                       %angleToTurn = 180-angleFB;
-                       %turnBot(serPort, angleToTurn);
                        stopToken = 0;
                        walkFwd(serPort, 0.1);
                        SetFwdVelAngVelCreate(serPort,0.3,0);
@@ -172,22 +182,21 @@ function reactToWall(serPort, sonarArray)
                       walkFwd(serPort, 0.1);
                       SetFwdVelAngVelCreate(serPort,0.3,0);
                    else
-                       % wall is rear and right
-                       %[angleFB angleRL wallLength] = triangWall(sonarArray(4), sonarArray(2));
-                       %angleToTurn = 180-angleFB;
-                       %turnBot(serPort, angleToTurn);
                        stopToken = 0;
                        walkFwd(serPort, 0.1);
                        SetFwdVelAngVelCreate(serPort,0.3,0);
                    end
                 end
             end
+            % if we didn't meet any of the above conditions, walk forward
             stopToken = 0;
             SetFwdVelAngVelCreate(serPort,0.3,0);
+            
+            % debug line ---------------------------------------
             if debug==1
                 disp('reactToWall COMPLETE')
             end
-    
+        % if while loop catches any errors, envoke botFail();
         catch err
             disp(err);
             botFail(serPort);
@@ -197,8 +206,11 @@ end
 
     
 function walkFwd(serPort, distance)
+% walkFwd takes 1 argument, and moves a specified distance before stopping
 global debug;
 global stopToken;
+
+% debug line ------------------------------------  
 if debug ==1
     disp('walkFwd envoked')
 end
@@ -206,15 +218,21 @@ end
     if stopToken == 0;
         travelDist(serPort, 0.2, distance);
     end
+    
+% debug line ------------------------------------    
 if debug ==1
     disp('walkFwd COMPLETE')
 end
 end
 
 function walkBack(serPort, distance)
+% same as walkFwd, only the distance moved is recorded as negative distance
+% to protect the graph. This function is only envoked if bump sensors are
+% triggered 
 global debug;
 global stopToken;
 global tStart;
+% debug line ------------------------------------
 if debug ==1
     disp('walkBack envoked')
 end
@@ -231,7 +249,7 @@ end
     fclose(fh);
     pause(0.1);
     
-    
+% debug line ------------------------------------    
 if debug ==1
     disp('walkFwd COMPLETE')
 end
@@ -239,35 +257,49 @@ end
 
 
 function turnBot(serPort, angleToTurn)
+% turnBot() takes an angle as an argument, and turns accordingly, then
+% records travel data to the log file
     global tStart;
     global zeroDistCount;
     global debug;
+    % debug line ------------------------------------
     if debug ==1 
         disp('turnBot envoked')
     end
-    
+    %distTraveled since last call of the turnBot() function
     distTraveled = DistanceSensorRoomba(serPort);
+    
+    % conditional increments global variable to indicate whether the bot
+    % has moved since last turning, if bot has a distance=0 for three
+    % iterations of turnBot(), confusedBot() is called
     if distTraveled == 0
         zeroDistCount = zeroDistCount + 1;
     else
         zeroDistCount = 0;
     end
     turnAngle(serPort, 0.2, angleToTurn);
+    
+    % record data to log file for creating tracks
     fh = fopen('roombaLog.dat', 'a+');
     fprintf(fh, '%0.4f\t%0.4f\t%0.4f\n', toc(tStart), distTraveled, angleToTurn);
     fclose(fh);
     pause(0.1);
+    % debug line ------------------------------------
     if debug==1
         disp('turnBot COMPLETE')
     end
 end
 
 function angle = convertAngles(angle)
+% convertAngles() converts from CCW to CW turning
         angle = (-1).*angle;
 end
 
 
 function botFail(serPort)
+% botFail() is envoked as a result of the main try/catch statement. 
+% if there is an error in the main loop, the bot turns 90 degrees and
+% begins to walk forward
 global debug;
 if debug ==1 
     disp('botFail ENVOKED')
@@ -281,6 +313,8 @@ end
 
 
  function botConfused(serPort)
+ % botConfused() is envoked when the bot turns 3 times without changing
+ % distance (bot is stuck)
  global debug;
  if debug ==1 
     disp('botConfused -------------------')
@@ -333,29 +367,14 @@ function [maintainRat] = ratioWalker(serPort)
 end
 
 function stopBot(serPort)
+% stopBot stops the robot, and returns a stopToken=1;
 global debug;
+global stopToken;
+    % debug line ------------------------------------
     if debug ==1
         disp('stopBot envoked')
     end
-    global stopToken;
+    
     stopToken = 1;
     SetFwdVelAngVelCreate(serPort,0,0)
-end
-
-
-function w= v2w(v)
-% Calculate the maximum allowable angular velocity from the linear velocity
-%
-% Input:
-% v - Forward velocity of Create (m/s)
-%
-% Output:
-% w - Angular velocity of Create (rad/s)
-    
-    % Robot constants
-    maxWheelVel= 2.5;   % Max linear velocity of each drive wheel (m/s)
-    robotRadius= 0.6;   % Radius of the robot (m)
-    
-    % Max velocity combinations obey rule v+wr <= v_max
-    w= (maxWheelVel-v)/robotRadius;
 end
