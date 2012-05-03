@@ -23,6 +23,9 @@ function finalRad= ControlProgram(serPort)
     global iterateCount;
     global stopToken;
     global zeroDistCount;
+    global debug;
+    % debug=1 is in debug mode, 0 not in debug mode. 
+    debug = 1;
     zeroDistCount = 0;
     iterateCount = 0;
     
@@ -59,11 +62,16 @@ end
 
 
 function reactToWall(serPort, sonarArray)
-disp('reactToWall envoked')
+
     % reactToWall takes 2 arguments serPort, and a vector containing all sonar
     % readings
     global stopToken;
     global zeroDistCount;
+    global debug;
+    
+    if debug==1
+        disp('reactToWall envoked')
+    end
     smallestDist = [3 3 3 3];
     % stopToken = 1; prevents bot from moving
     stopToken = 1;
@@ -87,7 +95,7 @@ disp('reactToWall envoked')
 
 
 
-        try
+        %try
             if sonarArray(1) == 3.00 && sonarArray(4) == 3.00
                 if any(sonarArray <0.3)
                    smallestDist(1) = find(sonarArray == min(sonarArray));
@@ -166,29 +174,41 @@ disp('reactToWall envoked')
                 end
             end
             SetFwdVelAngVelCreate(serPort,0.3,0);
-            disp('reactToWall COMPLETE')
+            if debug==1
+                disp('reactToWall COMPLETE')
+            end
     
-        catch err
-            disp(err);
-        end
+        %catch err
+        %    disp(err);
+        %end
     
 end
 
     
 function walkFwd(serPort, distance)
-disp('walkFwd envoked')
+global debug;
 global stopToken;
+if debug ==1
+    disp('walkFwd envoked')
+end
+
     if stopToken == 0;
         travelDist(serPort, 0.2, distance);
     end
-disp('walkFwd COMPLETE')  
+if debug ==1
+    disp('walkFwd COMPLETE')
+end
 end
 
 
 function turnBot(serPort, angleToTurn)
-    disp('turnBot envoked')
     global tStart;
     global zeroDistCount;
+    global debug;
+    if debug ==1 
+        disp('turnBot envoked')
+    end
+    
     distTraveled = DistanceSensorRoomba(serPort);
     if distTraveled == 0
         zeroDistCount = zeroDistCount + 1;
@@ -200,7 +220,9 @@ function turnBot(serPort, angleToTurn)
     fprintf(fh, '%0.4f\t%0.4f\t%0.4f\n', toc(tStart), distTraveled, angleToTurn);
     fclose(fh);
     pause(0.1);
-    disp('turnBot COMPLETE')
+    if debug==1
+        disp('turnBot COMPLETE')
+    end
 end
 
 function angle = convertAngles(angle)
@@ -209,7 +231,10 @@ end
 
 
  function botConfused(serPort)
- disp('botConfused -------------------')
+ global debug;
+ if debug ==1 
+    disp('botConfused -------------------')
+ end
  sonarArray = [ReadSonarMultiple(serPort, 2) ReadSonarMultiple(serPort, 1) ReadSonarMultiple(serPort, 3) ReadSonarMultiple(serPort,4 )];
  largestDist = find(sonarArray == max(sonarArray)) 
      if largestDist == 4
@@ -224,7 +249,9 @@ end
      else
         travelDist(serPort, 0.2, sonarArray(1).*0.20)
      end
-     disp('botConfused -- COMPLETE')
+     if debug==1
+        disp('botConfused -- COMPLETE')
+     end
  end
 
 function [angFB angLR wallLength] = triangWall(sensorFB, sensorLR)
@@ -256,7 +283,10 @@ function [maintainRat] = ratioWalker(serPort)
 end
 
 function stopBot(serPort)
-    disp('stopBot envoked')
+global debug;
+    if debug ==1
+        disp('stopBot envoked')
+    end
     global stopToken;
     stopToken = 1;
     SetFwdVelAngVelCreate(serPort,0,0)
