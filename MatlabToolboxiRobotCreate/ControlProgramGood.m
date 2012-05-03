@@ -24,7 +24,7 @@ function finalRad= ControlProgram(serPort)
     global stopToken;
     global zeroDistCount;
     global debug;
-    % debug=1 is in debug mode, 0 not in debug mode. 
+    % debug=1 is in debug mode, not in debug == 0
     debug = 1;
     zeroDistCount = 0;
     iterateCount = 0;
@@ -95,7 +95,7 @@ function reactToWall(serPort, sonarArray)
 
 
 
-        %try
+        try
             if sonarArray(1) == 3.00 && sonarArray(4) == 3.00
                 if any(sonarArray <0.3)
                    smallestDist(1) = find(sonarArray == min(sonarArray));
@@ -173,14 +173,16 @@ function reactToWall(serPort, sonarArray)
                    end
                 end
             end
+            stopToken = 0;
             SetFwdVelAngVelCreate(serPort,0.3,0);
             if debug==1
                 disp('reactToWall COMPLETE')
             end
     
-        %catch err
-        %    disp(err);
-        %end
+        catch err
+            disp(err);
+            botFail(serPort);
+        end
     
 end
 
@@ -228,6 +230,19 @@ end
 function angle = convertAngles(angle)
         angle = (-1).*angle;
 end
+
+
+function botFail(serPort)
+global debug;
+if debug ==1 
+    disp('botFail ENVOKED')
+end
+
+stopBot(serPort);
+turnBot(serPort, 90);
+SetFwdVelAngVelCreate(serPort,0.3,0);
+end
+
 
 
  function botConfused(serPort)
